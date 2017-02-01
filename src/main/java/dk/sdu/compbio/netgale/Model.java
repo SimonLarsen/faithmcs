@@ -1,13 +1,11 @@
 package dk.sdu.compbio.netgale;
 
 public class Model {
-    private final int k;
+    private float alpha;
 
-    public Model(int k) {
-        this.k = k;
+    public Model(float alpha) {
+        this.alpha = alpha;
     }
 
-    public int getK() {
-        return k;
-    }
+    public float getAlpha() { return alpha; }
 }

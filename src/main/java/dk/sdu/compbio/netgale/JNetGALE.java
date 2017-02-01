@@ -8,6 +8,7 @@ import org.apache.commons.cli.*;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.PrintWriter;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -22,11 +23,20 @@ public class JNetGALE {
         CommandLine cmd = parser.parse(options, args);
 
         NetworkReader reader = new NetworkReader();
-        List<Network> networks = cmd.getArgList().stream().map(File::new).map(reader::read).collect(Collectors.toList());
+        List<Network> networks = new ArrayList<>();
+        for(String path : cmd.getArgList()) {
+            Network network = new Network();
+            reader.read(network, new File(path));
+            networks.add(network);
+        }
 
-        Model model = new Model(0);
-        Aligner aligner = new SimulatedAnnealingAligner(1.0f, 100000);
+        Model model = new Model(2.0f);
+        Aligner aligner = new SimulatedAnnealingAligner(model, 1.0f,100000);
         Alignment alignment = aligner.align(networks, model);
+
+        for(List<Node> nodes : alignment.getAlignment()) {
+            System.out.println(nodes.stream().map(Node::toString).collect(Collectors.joining("\t")));
+        }
 
         if(cmd.hasOption("o")) {
             writeAlignment(alignment, new File(cmd.getOptionValue("o")));
