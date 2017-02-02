@@ -2,6 +2,7 @@ package dk.sdu.compbio.netgale;
 
 import dk.sdu.compbio.netgale.network.Network;
 import dk.sdu.compbio.netgale.network.NetworkReader;
+import dk.sdu.compbio.netgale.network.NetworkWriter;
 import dk.sdu.compbio.netgale.network.Node;
 import org.apache.commons.cli.*;
 
@@ -15,18 +16,24 @@ import java.util.stream.Collectors;
 public class JNetGALE {
     public static void main(String[] args) throws ParseException, FileNotFoundException {
         Option output_option = Option.builder("o").longOpt("output").hasArg().build();
+        Option output_graph_option = Option.builder("O").longOpt("write-network").hasArg().build();
 
         Options options = new Options();
         options.addOption(output_option);
+        options.addOption(output_graph_option);
 
         CommandLineParser parser = new DefaultParser();
         CommandLine cmd = parser.parse(options, args);
 
-        NetworkReader reader = new NetworkReader();
+        if(cmd.getArgList().size() < 2) {
+            System.err.println("error: Needs at least two networks for alignment.");
+            System.exit(1);
+        }
+
         List<Network> networks = new ArrayList<>();
         for(String path : cmd.getArgList()) {
             Network network = new Network();
-            reader.read(network, new File(path));
+            NetworkReader.read(network, new File(path));
             networks.add(network);
         }
 
@@ -34,12 +41,12 @@ public class JNetGALE {
         Aligner aligner = new SimulatedAnnealingAligner(model, 1.0f,100000);
         Alignment alignment = aligner.align(networks, model);
 
-        for(List<Node> nodes : alignment.getAlignment()) {
-            System.out.println(nodes.stream().map(Node::toString).collect(Collectors.joining("\t")));
-        }
-
         if(cmd.hasOption("o")) {
             writeAlignment(alignment, new File(cmd.getOptionValue("o")));
+        }
+
+        if(cmd.hasOption("O")) {
+            NetworkWriter.write(alignment.buildNetwork(), new File(cmd.getOptionValue("O")));
         }
     }
 

@@ -7,6 +7,7 @@ public class Edge extends DefaultEdge {
     private final int hash_code;
 
     public Edge(Node source, Node target) {
+        super();
         this.source = source;
         this.target = target;
 
@@ -35,10 +36,7 @@ public class Edge extends DefaultEdge {
         if(!(o instanceof Edge)) return false;
 
         Edge e = (Edge)o;
-        return source == e.getSource() && target == e.getTarget();
-        /*
         return (source == e.getSource() && target == e.getTarget()) ||
                (source == e.getTarget() && target == e.getSource());
-        */
     }
 }

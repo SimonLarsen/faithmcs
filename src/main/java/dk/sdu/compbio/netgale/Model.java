@@ -1,7 +1,7 @@
 package dk.sdu.compbio.netgale;
 
 public class Model {
-    private float alpha;
+    private final float alpha;
 
     public Model(float alpha) {
         this.alpha = alpha;

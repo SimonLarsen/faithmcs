@@ -3,15 +3,25 @@ package dk.sdu.compbio.netgale.network;
 public class Node {
     private final String label;
     private final int hash_code;
+    private final boolean fake;
 
-    public Node(String label) {
+    private int position;
+
+    public Node(String label, boolean fake) {
         this.label = label;
         this.hash_code = label.hashCode();
+        this.fake = fake;
+    }
+
+    public Node(String label) {
+        this(label, false);
     }
 
     public String getLabel() {
         return label;
     }
+
+    public boolean isFake() { return fake; }
 
     @Override
     public String toString() {
@@ -31,5 +41,13 @@ public class Node {
 
         Node n = (Node)o;
         return label.equals(n.getLabel());
+    }
+
+    public int getPosition() {
+        return position;
+    }
+
+    public void setPosition(int position) {
+        this.position = position;
     }
 }

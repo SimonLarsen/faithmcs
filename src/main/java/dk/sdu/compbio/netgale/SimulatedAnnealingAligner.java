@@ -4,6 +4,7 @@ import com.google.common.collect.Sets;
 import dk.sdu.compbio.netgale.network.Edge;
 import dk.sdu.compbio.netgale.network.Network;
 import dk.sdu.compbio.netgale.network.Node;
+import org.jgrapht.alg.NeighborIndex;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -26,138 +27,106 @@ public class SimulatedAnnealingAligner implements Aligner {
         int m = networks.stream().mapToInt(v -> v.vertexSet().size()).min().getAsInt();
         int M = networks.stream().mapToInt(v -> v.vertexSet().size()).max().getAsInt();
 
-        List<Map<Node,Integer>> nodeMaps = new ArrayList<>();
-        List<Map<Integer,Node>> revNodeMaps = new ArrayList<>();
+        List<NeighborIndex<Node,Edge>> indices = new ArrayList<>();
+
         for(Network network : networks) {
-            Map<Node,Integer> map = new HashMap<>();
-            Map<Integer,Node> revMap = new HashMap<>();
-            int id = 0;
-            for(Node node : network.vertexSet()) {
-                int nid = id++;
-                map.put(node, nid);
-                revMap.put(nid, node);
-            }
-            while(map.size() < M) {
-                Node fake_node = new Node("fake$" + id);
+            int fid = 0;
+            while(network.vertexSet().size() < M) {
+                Node fake_node = new Node("$fake$" + fid++, true);
                 network.addVertex(fake_node);
-                int nid = id++;
-                map.put(fake_node, nid);
-                revMap.put(nid, fake_node);
-
-            }
-            nodeMaps.add(map);
-            revNodeMaps.add(revMap);
-        }
-
-        List<List<Set<Integer>>> neighbors = new ArrayList<>();
-        for(int i = 0; i < n; ++i) {
-            List<Set<Integer>> nneighbors = new ArrayList<>();
-            for(int j = 0; j < M; ++j) {
-                nneighbors.add(new TreeSet<>());
             }
 
-            for(Edge e : networks.get(i).edgeSet()) {
-                int j = nodeMaps.get(i).get(e.getSource());
-                int k = nodeMaps.get(i).get(e.getTarget());
-                nneighbors.get(j).add(k);
-                nneighbors.get(k).add(j);
+            int pos = 0;
+            for(Node node : network.vertexSet()) {
+                node.setPosition(pos++);
             }
 
-            neighbors.add(nneighbors);
+            indices.add(new NeighborIndex<>(network));
         }
 
         int[][] edges = new int[M][M];
-        for(int i = 0; i < n; ++i) {
-            for(int j = 0; j < M; ++j) {
-                for(Integer k : neighbors.get(i).get(j)) {
-                    edges[j][k]++;
-                }
+        for(Network network : networks) {
+            for(Edge e : network.edgeSet()) {
+                int i = e.getSource().getPosition();
+                int j = e.getTarget().getPosition();
+                edges[i][j]++;
+                edges[j][i]++;
             }
         }
 
-        int[][] alignment = new int[n][M];
-        for(int i = 0; i < n; ++i) {
-            for(int j = 0; j < M; ++j) {
-                alignment[i][j] = j;
-            }
-        }
+        List<List<Node>> nodes = networks.stream().map(network -> network.vertexSet().stream().collect(Collectors.toList())).collect(Collectors.toList());
 
         Random rand = new Random();
         for(int iteration = 0; iteration < max_iterations; ++iteration) {
             int i = rand.nextInt(n);
             int j = rand.nextInt(M);
             int k = j;
-            while(k == j) k = rand.nextInt(M);
-            float dt = delta(alignment, edges, neighbors, i, j, k);
+            while(j == k) k = rand.nextInt(M);
+
+            float dt = delta(edges, indices.get(i), nodes.get(i).get(j), nodes.get(i).get(k));
             if(dt > 0f) {
-                swap(alignment, edges, neighbors, i, j, k);
+                swap(edges, indices.get(i), nodes.get(i).get(j), nodes.get(i).get(k));
             }
         }
 
-        List<List<Node>> nalignment = new ArrayList<>();
-        for(int i = 0; i < n; ++i) {
-            List<Node> row = new ArrayList<>();
-            for(int j = 0; j < M; ++j) {
-                row.add(revNodeMaps.get(i).get(alignment[i][j]));
-            }
-            nalignment.add(row);
+        // Sort nodes on position to obtain alignment
+        for(List<Node> node_list : nodes) {
+            Collections.sort(node_list, (a, b) -> a.getPosition() - b.getPosition());
         }
 
-        return new Alignment(nalignment);
-
-        /*
-        for(int iteration = 0; iteration < max_iterations; ++iteration) {
-            float temperature = (1.0f - iteration / max_iterations) * start_temperature;
-        }
-        */
+        return new Alignment(nodes, networks);
     }
 
-    private float delta(int[][] alignment, int[][] edges, List<List<Set<Integer>>> neighbors, int i, int j, int k) {
+    private float delta(int[][] edges, NeighborIndex<Node,Edge> index, Node u, Node v) {
         float delta = 0;
 
-        Integer u = alignment[i][j];
-        Integer v = alignment[i][k];
+        int i = u.getPosition();
+        int j = v.getPosition();
 
-        Sets.SetView<Integer> diff = Sets.difference(neighbors.get(i).get(u), neighbors.get(i).get(v));
-        for(Integer w : diff) {
+        for(Node w : Sets.difference(index.neighborsOf(u), index.neighborsOf(v))){
             if(w != v) {
-                delta += -Math.pow(edges[u][w], model.getAlpha()) + Math.pow(edges[u][w]-1, model.getAlpha());
-                delta += -Math.pow(edges[v][w], model.getAlpha()) + Math.pow(edges[v][w]+1, model.getAlpha());
+                int l = w.getPosition();
+                delta -= 2 * edges[i][l] - 1;
+                delta += 2 * edges[j][l] + 1;
             }
         }
 
-        diff = Sets.difference(neighbors.get(i).get(v), neighbors.get(i).get(u));
-        for(Integer w : diff) {
+        for(Node w : Sets.difference(index.neighborsOf(v), index.neighborsOf(u))) {
             if(w != u) {
-                delta += -Math.pow(edges[v][w], model.getAlpha()) + Math.pow(edges[v][w]-1, model.getAlpha());
-                delta += -Math.pow(edges[u][w], model.getAlpha()) + Math.pow(edges[u][w]+1, model.getAlpha());
+                int l = w.getPosition();
+                delta -= 2 * edges[j][l] - 1;
+                delta += 2 * edges[i][l] + 1;
             }
         }
 
         return delta;
     }
 
-    private void swap(int[][] alignment, int[][] edges, List<List<Set<Integer>>> neighbors, int i, int j, int k) {
-        Integer u = alignment[i][j];
-        Integer v = alignment[i][k];
+    private void swap(int[][] edges, NeighborIndex<Node,Edge> index, Node u, Node v) {
+        int i = u.getPosition();
+        int j = v.getPosition();
 
-        Sets.SetView<Integer> diff = Sets.difference(neighbors.get(i).get(u), neighbors.get(i).get(v));
-        for(Integer w : diff) {
+        for(Node w : Sets.difference(index.neighborsOf(u), index.neighborsOf(v))) {
             if(w != v) {
-                edges[u][w]--;
-                edges[v][w]++;
+                int l = w.getPosition();
+                edges[i][l]--;
+                edges[l][i]--;
+                edges[j][l]++;
+                edges[l][j]++;
             }
         }
 
-        diff = Sets.difference(neighbors.get(i).get(v), neighbors.get(i).get(u));
-        for(Integer w : diff) {
+        for(Node w : Sets.difference(index.neighborsOf(v), index.neighborsOf(u))) {
             if(w != u) {
-                edges[v][w]--;
-                edges[u][w]++;
+                int l = w.getPosition();
+                edges[j][l]--;
+                edges[l][j]--;
+                edges[i][l]++;
+                edges[l][i]++;
             }
         }
 
-        alignment[i][j] = v;
-        alignment[i][k] = u;
+        u.setPosition(j);
+        v.setPosition(i);
     }
 }
