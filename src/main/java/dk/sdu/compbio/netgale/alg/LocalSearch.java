@@ -9,11 +9,9 @@ import dk.sdu.compbio.netgale.network.Network;
 import dk.sdu.compbio.netgale.network.Node;
 import org.jgrapht.alg.NeighborIndex;
 
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 public class LocalSearch implements Aligner {
     private final Model model;
@@ -58,46 +56,40 @@ public class LocalSearch implements Aligner {
 
         Random rand = new Random();
         for(int iteration = 0; iteration < 30; ++iteration) {
-            System.err.println("perturbate " + iteration);
             for(int i = 1; i < n; ++i) {
                 for(int rep = 0; rep < M/10; ++rep) {
                     int j = rand.nextInt(M);
                     int k;
-                    do {
-                        k = rand.nextInt(M);
-                    } while(k == j);
+                    do k = rand.nextInt(M);
+                    while(k == j);
                     swap(edges, indices.get(i), nodes.get(i).get(j), nodes.get(i).get(k));
                 }
             }
-            System.err.println("ls " + iteration);
+
             // local search step
-            for(int i = 0; i < n; ++i) {
-                for (int j = 0; j < M; ++j) {
-                    for (int k = j + 1; k < M; ++k) {
-                        float dt = delta(edges, indices.get(i), nodes.get(i).get(j), nodes.get(i).get(k));
-                        if (dt > 0) {
-                            swap(edges, indices.get(i), nodes.get(i).get(j), nodes.get(i).get(k));
+            boolean repeat = true;
+            while(repeat) {
+                repeat = false;
+                for (int i = 1; i < n; ++i) {
+                    for (int j = 0; j < M-1; ++j) {
+                        int finalI = i;
+                        int finalJ = j;
+
+                        List<Double> dts = IntStream.range(j+1, M).parallel().mapToObj(k -> {
+                            return new Double(delta(edges, indices.get(finalI), nodes.get(finalI).get(finalJ), nodes.get(finalI).get(k)));
+                        }).collect(Collectors.toList());
+
+                        Integer best = IntStream.range(j+1, M).parallel().mapToObj(v -> v).max(Comparator.comparingDouble(k -> dts.get(k-(finalJ+1)))).get();
+                        float dt = delta(edges, indices.get(i), nodes.get(i).get(j), nodes.get(i).get(best));
+
+                        if(dt > 0) {
+                            repeat = true;
+                            swap(edges, indices.get(i), nodes.get(i).get(j), nodes.get(i).get(best));
                         }
                     }
                 }
             }
         }
-
-        /*
-        for(int iteration = 0; iteration < max_iterations; ++iteration) {
-            float temperature = (1.0f - iteration / max_iterations) * start_temperature;
-
-            int i = rand.nextInt(n);
-            int j = rand.nextInt(M);
-            int k = j;
-            while(j == k) k = rand.nextInt(M);
-
-            float dt = delta(edges, indices.get(i), nodes.get(i).get(j), nodes.get(i).get(k));
-            if(dt >= 0f || rand.nextFloat() < Math.exp(dt / temperature)) {
-                swap(edges, indices.get(i), nodes.get(i).get(j), nodes.get(i).get(k));
-            }
-        }
-        */
 
         // Sort nodes on position to obtain alignment
         for(List<Node> node_list : nodes) {

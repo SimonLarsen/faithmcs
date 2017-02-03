@@ -3,7 +3,6 @@ package dk.sdu.compbio.netgale.alg;
 import com.google.common.collect.Sets;
 import dk.sdu.compbio.netgale.Alignment;
 import dk.sdu.compbio.netgale.Model;
-import dk.sdu.compbio.netgale.alg.Aligner;
 import dk.sdu.compbio.netgale.network.Edge;
 import dk.sdu.compbio.netgale.network.Network;
 import dk.sdu.compbio.netgale.network.Node;
