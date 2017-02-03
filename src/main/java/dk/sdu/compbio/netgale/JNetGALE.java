@@ -1,8 +1,11 @@
 package dk.sdu.compbio.netgale;
 
+import dk.sdu.compbio.netgale.alg.Aligner;
+import dk.sdu.compbio.netgale.alg.LocalSearch;
 import dk.sdu.compbio.netgale.network.Network;
-import dk.sdu.compbio.netgale.network.NetworkReader;
-import dk.sdu.compbio.netgale.network.NetworkWriter;
+import dk.sdu.compbio.netgale.network.io.ImportException;
+import dk.sdu.compbio.netgale.network.io.NetworkReader;
+import dk.sdu.compbio.netgale.network.io.NetworkWriter;
 import dk.sdu.compbio.netgale.network.Node;
 import org.apache.commons.cli.*;
 
@@ -14,7 +17,8 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public class JNetGALE {
-    public static void main(String[] args) throws ParseException, FileNotFoundException {
+    public static void main(String[] args) throws ParseException, FileNotFoundException, ImportException {
+        Option iterations_option = Option.builder("i").longOpt("iterations").hasArg().build();
         Option output_option = Option.builder("o").longOpt("output").hasArg().build();
         Option output_graph_option = Option.builder("O").longOpt("write-network").hasArg().build();
 
@@ -30,6 +34,11 @@ public class JNetGALE {
             System.exit(1);
         }
 
+        int iterations = 10000;
+        if(cmd.hasOption("i")) {
+            iterations = Integer.parseInt(cmd.getOptionValue("i"));
+        }
+
         List<Network> networks = new ArrayList<>();
         for(String path : cmd.getArgList()) {
             Network network = new Network();
@@ -37,8 +46,10 @@ public class JNetGALE {
             networks.add(network);
         }
 
-        Model model = new Model(2.0f);
-        Aligner aligner = new SimulatedAnnealingAligner(model, 1.0f,100000);
+        Model model = new Model();
+
+        //Aligner aligner = new SimulatedAnnealingAligner(model, 1.0f, iterations);
+        Aligner aligner = new LocalSearch(model);
         Alignment alignment = aligner.align(networks, model);
 
         if(cmd.hasOption("o")) {

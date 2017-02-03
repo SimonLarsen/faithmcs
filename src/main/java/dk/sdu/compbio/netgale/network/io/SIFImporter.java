@@ -1,4 +1,8 @@
-package dk.sdu.compbio.netgale.network;
+package dk.sdu.compbio.netgale.network.io;
+
+import dk.sdu.compbio.netgale.network.Edge;
+import dk.sdu.compbio.netgale.network.Network;
+import dk.sdu.compbio.netgale.network.Node;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -6,13 +10,14 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Scanner;
 
-class SIFImporter {
-    public static void read(Network network, File file) throws FileNotFoundException {
+class SIFImporter implements Importer {
+    @Override
+    public void read(Network network, File file) throws FileNotFoundException {
         Map<String,Node> nodeMap = new HashMap<>();
 
         Scanner scan = new Scanner(file);
         while(scan.hasNextLine()) {
-            String line = scan.nextLine();
+            String line = scan.nextLine().trim();
             String[] parts = line.split("\t");
             if(parts.length == 0) continue;
             Node source = getNode(parts[0], nodeMap, network);

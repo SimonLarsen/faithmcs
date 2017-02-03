@@ -1,24 +1,24 @@
-package dk.sdu.compbio.netgale;
+package dk.sdu.compbio.netgale.alg;
 
 import com.google.common.collect.Sets;
+import dk.sdu.compbio.netgale.alg.Aligner;
+import dk.sdu.compbio.netgale.Alignment;
+import dk.sdu.compbio.netgale.Model;
 import dk.sdu.compbio.netgale.network.Edge;
 import dk.sdu.compbio.netgale.network.Network;
 import dk.sdu.compbio.netgale.network.Node;
 import org.jgrapht.alg.NeighborIndex;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Random;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
-public class SimulatedAnnealingAligner implements Aligner {
+public class LocalSearch implements Aligner {
     private final Model model;
-    private final float start_temperature;
-    private final int max_iterations;
-
-    public SimulatedAnnealingAligner(Model model, float start_temperature, int max_iterations) {
+    public LocalSearch(Model model) {
         this.model = model;
-        this.start_temperature = start_temperature;
-        this.max_iterations = max_iterations;
     }
 
     @Override
@@ -57,21 +57,51 @@ public class SimulatedAnnealingAligner implements Aligner {
         List<List<Node>> nodes = networks.stream().map(network -> network.vertexSet().stream().collect(Collectors.toList())).collect(Collectors.toList());
 
         Random rand = new Random();
+        for(int iteration = 0; iteration < 30; ++iteration) {
+            System.err.println("perturbate " + iteration);
+            for(int i = 1; i < n; ++i) {
+                for(int rep = 0; rep < M/10; ++rep) {
+                    int j = rand.nextInt(M);
+                    int k;
+                    do {
+                        k = rand.nextInt(M);
+                    } while(k == j);
+                    swap(edges, indices.get(i), nodes.get(i).get(j), nodes.get(i).get(k));
+                }
+            }
+            System.err.println("ls " + iteration);
+            // local search step
+            for(int i = 0; i < n; ++i) {
+                for (int j = 0; j < M; ++j) {
+                    for (int k = j + 1; k < M; ++k) {
+                        float dt = delta(edges, indices.get(i), nodes.get(i).get(j), nodes.get(i).get(k));
+                        if (dt > 0) {
+                            swap(edges, indices.get(i), nodes.get(i).get(j), nodes.get(i).get(k));
+                        }
+                    }
+                }
+            }
+        }
+
+        /*
         for(int iteration = 0; iteration < max_iterations; ++iteration) {
+            float temperature = (1.0f - iteration / max_iterations) * start_temperature;
+
             int i = rand.nextInt(n);
             int j = rand.nextInt(M);
             int k = j;
             while(j == k) k = rand.nextInt(M);
 
             float dt = delta(edges, indices.get(i), nodes.get(i).get(j), nodes.get(i).get(k));
-            if(dt > 0f) {
+            if(dt >= 0f || rand.nextFloat() < Math.exp(dt / temperature)) {
                 swap(edges, indices.get(i), nodes.get(i).get(j), nodes.get(i).get(k));
             }
         }
+        */
 
         // Sort nodes on position to obtain alignment
         for(List<Node> node_list : nodes) {
-            Collections.sort(node_list, (a, b) -> a.getPosition() - b.getPosition());
+            node_list.sort(Comparator.comparingInt(Node::getPosition));
         }
 
         return new Alignment(nodes, networks);

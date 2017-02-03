@@ -1,4 +1,6 @@
-package dk.sdu.compbio.netgale.network;
+package dk.sdu.compbio.netgale.network.io;
+
+import dk.sdu.compbio.netgale.network.Network;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -12,11 +14,18 @@ public class NetworkWriter {
         }
         String ending = path.substring(dotpos+1);
 
-        if(ending.equals("sif")) {
-            SIFExporter.write(network, file);
+        Exporter exporter = null;
+
+        switch(ending) {
+            case "sif":
+                exporter = new SIFExporter(); break;
+            case "gw":
+            case "leda":
+                exporter = new LEDAExporter(); break;
         }
-        else {
-            throw new IllegalArgumentException("Unrecognized file format: " + ending);
-        }
+
+        if(exporter == null) throw new IllegalArgumentException("Unrecognized file format: " + ending);
+
+        exporter.write(network, file);
     }
 }
