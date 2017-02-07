@@ -23,6 +23,7 @@ public class JNetGALE {
         Option output_graph_option = Option.builder("O").longOpt("write-network").hasArg().build();
 
         Options options = new Options();
+        options.addOption(iterations_option);
         options.addOption(output_option);
         options.addOption(output_graph_option);
 
@@ -34,10 +35,7 @@ public class JNetGALE {
             System.exit(1);
         }
 
-        int iterations = 10000;
-        if(cmd.hasOption("i")) {
-            iterations = Integer.parseInt(cmd.getOptionValue("i"));
-        }
+        int iterations = Integer.parseInt(cmd.getOptionValue("i", "20"));
 
         List<Network> networks = new ArrayList<>();
         for(String path : cmd.getArgList()) {
@@ -48,8 +46,7 @@ public class JNetGALE {
 
         Model model = new Model();
 
-        //Aligner aligner = new SimulatedAnnealingAligner(model, 1.0f, iterations);
-        Aligner aligner = new LocalSearch(model);
+        Aligner aligner = new LocalSearch(model, iterations);
         Alignment alignment = aligner.align(networks, model);
 
         if(cmd.hasOption("o")) {

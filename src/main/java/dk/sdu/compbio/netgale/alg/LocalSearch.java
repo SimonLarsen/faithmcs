@@ -15,8 +15,11 @@ import java.util.stream.IntStream;
 
 public class LocalSearch implements Aligner {
     private final Model model;
-    public LocalSearch(Model model) {
+    private final int max_iterations;
+
+    public LocalSearch(Model model, int max_iterations) {
         this.model = model;
+        this.max_iterations = max_iterations;
     }
 
     @Override
@@ -34,13 +37,21 @@ public class LocalSearch implements Aligner {
                 network.addVertex(fake_node);
             }
 
-            int pos = 0;
-            for(Node node : network.vertexSet()) {
-                node.setPosition(pos++);
-            }
-
             indices.add(new NeighborIndex<>(network));
         }
+
+        List<List<Node>> nodes = networks.stream().map(network -> network.vertexSet().stream().collect(Collectors.toList())).collect(Collectors.toList());
+        for(int i = 0; i < n; ++i) {
+            nodes.get(i).sort(Comparator.comparingInt(networks.get(i)::degreeOf).reversed());
+            int pos = 0;
+            for(Node node : nodes.get(i)) {
+                node.setPosition(pos++);
+            }
+        }
+
+        int[][] best_solution = new int[n][M];
+        copyPositions(nodes, best_solution);
+        int best_quality = 0;
 
         int[][] edges = new int[M][M];
         for(Network network : networks) {
@@ -52,10 +63,8 @@ public class LocalSearch implements Aligner {
             }
         }
 
-        List<List<Node>> nodes = networks.stream().map(network -> network.vertexSet().stream().collect(Collectors.toList())).collect(Collectors.toList());
-
         Random rand = new Random();
-        for(int iteration = 0; iteration < 30; ++iteration) {
+        for(int iteration = 0; iteration < max_iterations; ++iteration) {
             for(int i = 1; i < n; ++i) {
                 for(int rep = 0; rep < M/10; ++rep) {
                     int j = rand.nextInt(M);
@@ -89,6 +98,21 @@ public class LocalSearch implements Aligner {
                     }
                 }
             }
+
+            // count edges
+            int quality = countEdges(edges, n);
+            if(quality > best_quality) {
+                best_quality = quality;
+                copyPositions(nodes, best_solution);
+            }
+            System.err.println(String.format("current: %d edges, best: %d edges", quality, best_quality));
+        }
+
+        // copy best solution back into nodes
+        for(int i = 0; i < n; ++i) {
+            for(int j = 0; j < M; ++j) {
+                nodes.get(i).get(j).setPosition(best_solution[i][j]);
+            }
         }
 
         // Sort nodes on position to obtain alignment
@@ -97,6 +121,25 @@ public class LocalSearch implements Aligner {
         }
 
         return new Alignment(nodes, networks);
+    }
+
+    private void copyPositions(List<List<Node>> nodes, int[][] positions) {
+        for(int i = 0; i < nodes.size(); ++i) {
+            for(int j = 0; j < nodes.get(i).size(); ++j) {
+                positions[i][j] = nodes.get(i).get(j).getPosition();
+            }
+        }
+    }
+
+    private int countEdges(int[][] edges, int n) {
+        int M = edges.length;
+        int count = 0;
+        for(int j = 0; j < M; ++j) {
+            for(int k = j+1; k < M; ++k) {
+                if(edges[j][k] == n) count++;
+            }
+        }
+        return count;
     }
 
     private float delta(int[][] edges, NeighborIndex<Node,Edge> index, Node u, Node v) {
