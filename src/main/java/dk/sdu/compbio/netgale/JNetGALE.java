@@ -15,6 +15,7 @@ import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 public class JNetGALE {
     public static void main(String[] args) throws ParseException, FileNotFoundException, ImportException {
@@ -46,8 +47,9 @@ public class JNetGALE {
 
         Model model = new Model();
 
-        Aligner aligner = new LocalSearch(model, iterations);
-        Alignment alignment = aligner.align(networks, model);
+        Aligner aligner = new LocalSearch(networks, model);
+        aligner.run(iterations);
+        Alignment alignment = aligner.getAlignment();
 
         if(cmd.hasOption("o")) {
             writeAlignment(alignment, new File(cmd.getOptionValue("o")));
@@ -60,8 +62,15 @@ public class JNetGALE {
 
     private static void writeAlignment(Alignment alignment, File file) throws FileNotFoundException {
         PrintWriter pw = new PrintWriter(file);
-        for(List<Node> nodes : alignment.getAlignment()) {
-            pw.println(nodes.stream()
+        List<List<Node>> align = alignment.getAlignment();
+        int n = align.size();
+        int M = align.get(0).size();
+
+        for(int j = 0; j < M; ++j) {
+            int finalJ = j;
+            pw.println(IntStream.range(0, n)
+                    .mapToObj(i -> align.get(i).get(finalJ))
+                    .filter(node -> !node.isFake())
                     .map(Node::toString)
                     .collect(Collectors.joining("\t"))
             );

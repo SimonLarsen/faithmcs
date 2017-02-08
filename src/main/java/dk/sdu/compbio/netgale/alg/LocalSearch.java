@@ -1,7 +1,6 @@
 package dk.sdu.compbio.netgale.alg;
 
 import com.google.common.collect.Sets;
-import dk.sdu.compbio.netgale.alg.Aligner;
 import dk.sdu.compbio.netgale.Alignment;
 import dk.sdu.compbio.netgale.Model;
 import dk.sdu.compbio.netgale.network.Edge;
@@ -14,21 +13,24 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 public class LocalSearch implements Aligner {
+    private final int n, m, M;
+    private final List<Network> networks;
     private final Model model;
-    private final int max_iterations;
 
-    public LocalSearch(Model model, int max_iterations) {
+    private final List<NeighborIndex<Node,Edge>> indices;
+    private final List<List<Node>> nodes;
+    private final int[][] edges, best_edges;
+    private int quality, best_quality;
+
+    public LocalSearch(List<Network> networks, Model model) {
+        this.networks = networks;
         this.model = model;
-        this.max_iterations = max_iterations;
-    }
 
-    @Override
-    public Alignment align(List<Network> networks, Model model) {
-        int n = networks.size();
-        int m = networks.stream().mapToInt(v -> v.vertexSet().size()).min().getAsInt();
-        int M = networks.stream().mapToInt(v -> v.vertexSet().size()).max().getAsInt();
+        n = networks.size();
+        m = networks.stream().mapToInt(v -> v.vertexSet().size()).min().getAsInt();
+        M = networks.stream().mapToInt(v -> v.vertexSet().size()).max().getAsInt();
 
-        List<NeighborIndex<Node,Edge>> indices = new ArrayList<>();
+        indices = new ArrayList<>();
 
         for(Network network : networks) {
             int fid = 0;
@@ -40,7 +42,7 @@ public class LocalSearch implements Aligner {
             indices.add(new NeighborIndex<>(network));
         }
 
-        List<List<Node>> nodes = networks.stream().map(network -> network.vertexSet().stream().collect(Collectors.toList())).collect(Collectors.toList());
+        nodes = networks.stream().map(network -> network.vertexSet().stream().collect(Collectors.toList())).collect(Collectors.toList());
         for(int i = 0; i < n; ++i) {
             nodes.get(i).sort(Comparator.comparingInt(networks.get(i)::degreeOf).reversed());
             int pos = 0;
@@ -49,11 +51,11 @@ public class LocalSearch implements Aligner {
             }
         }
 
-        int[][] best_solution = new int[n][M];
-        copyPositions(nodes, best_solution);
-        int best_quality = 0;
+        best_edges = new int[n][M];
+        copyPositions(nodes, best_edges);
+        best_quality = countEdges(best_edges, n);
 
-        int[][] edges = new int[M][M];
+        edges = new int[M][M];
         for(Network network : networks) {
             for(Edge e : network.edgeSet()) {
                 int i = e.getSource().getPosition();
@@ -63,64 +65,60 @@ public class LocalSearch implements Aligner {
             }
         }
 
+    }
+
+    @Override
+    public void run(int iterations) {
+        for(int iteration = 0; iteration < iterations; ++iteration) {
+            step();
+            System.err.println(String.format("current: %d edges, best: %d edges", quality, best_quality));
+        }
+    }
+
+    @Override
+    public void step() {
         Random rand = new Random();
-        for(int iteration = 0; iteration < max_iterations; ++iteration) {
-            for(int i = 1; i < n; ++i) {
-                for(int rep = 0; rep < M/10; ++rep) {
-                    int j = rand.nextInt(M);
-                    int k;
-                    do k = rand.nextInt(M);
-                    while(k == j);
-                    swap(edges, indices.get(i), nodes.get(i).get(j), nodes.get(i).get(k));
-                }
+        for(int i = 1; i < n; ++i) {
+            for(int rep = 0; rep < M/10; ++rep) {
+                int j = rand.nextInt(M);
+                int k;
+                do k = rand.nextInt(M);
+                while(k == j);
+                swap(edges, indices.get(i), nodes.get(i).get(j), nodes.get(i).get(k));
             }
+        }
 
-            // local search step
-            boolean repeat = true;
-            while(repeat) {
-                repeat = false;
-                for (int i = 1; i < n; ++i) {
-                    for (int j = 0; j < M-1; ++j) {
-                        int finalI = i;
-                        int finalJ = j;
+        // local search step
+        boolean repeat = true;
+        while(repeat) {
+            repeat = false;
+            for (int i = 1; i < n; ++i) {
+                for (int j = 0; j < M-1; ++j) {
+                    int finalI = i;
+                    int finalJ = j;
 
-                        List<Double> dts = IntStream.range(j+1, M).parallel().mapToObj(k -> {
-                            return new Double(delta(edges, indices.get(finalI), nodes.get(finalI).get(finalJ), nodes.get(finalI).get(k)));
-                        }).collect(Collectors.toList());
+                    List<Double> dts = IntStream.range(j+1, M)
+                            .parallel()
+                            .mapToObj(k -> new Double(delta(edges, indices.get(finalI), nodes.get(finalI).get(finalJ), nodes.get(finalI).get(k))))
+                            .collect(Collectors.toList());
 
-                        Integer best = IntStream.range(j+1, M).parallel().mapToObj(v -> v).max(Comparator.comparingDouble(k -> dts.get(k-(finalJ+1)))).get();
-                        float dt = delta(edges, indices.get(i), nodes.get(i).get(j), nodes.get(i).get(best));
+                    Integer best = IntStream.range(j+1, M).parallel().mapToObj(v -> v).max(Comparator.comparingDouble(k -> dts.get(k-(finalJ+1)))).get();
+                    float dt = delta(edges, indices.get(i), nodes.get(i).get(j), nodes.get(i).get(best));
 
-                        if(dt > 0) {
-                            repeat = true;
-                            swap(edges, indices.get(i), nodes.get(i).get(j), nodes.get(i).get(best));
-                        }
+                    if(dt > 0) {
+                        repeat = true;
+                        swap(edges, indices.get(i), nodes.get(i).get(j), nodes.get(i).get(best));
                     }
                 }
             }
-
-            // count edges
-            int quality = countEdges(edges, n);
-            if(quality > best_quality) {
-                best_quality = quality;
-                copyPositions(nodes, best_solution);
-            }
-            System.err.println(String.format("current: %d edges, best: %d edges", quality, best_quality));
         }
 
-        // copy best solution back into nodes
-        for(int i = 0; i < n; ++i) {
-            for(int j = 0; j < M; ++j) {
-                nodes.get(i).get(j).setPosition(best_solution[i][j]);
-            }
+        // count edges
+        quality = countEdges(edges, n);
+        if(quality > best_quality) {
+            best_quality = quality;
+            copyPositions(nodes, best_edges);
         }
-
-        // Sort nodes on position to obtain alignment
-        for(List<Node> node_list : nodes) {
-            node_list.sort(Comparator.comparingInt(Node::getPosition));
-        }
-
-        return new Alignment(nodes, networks);
     }
 
     private void copyPositions(List<List<Node>> nodes, int[][] positions) {
@@ -193,5 +191,21 @@ public class LocalSearch implements Aligner {
 
         u.setPosition(j);
         v.setPosition(i);
+    }
+
+    public Alignment getAlignment() {
+        // copy best solution back into nodes
+        for(int i = 0; i < n; ++i) {
+            for(int j = 0; j < M; ++j) {
+                nodes.get(i).get(j).setPosition(best_edges[i][j]);
+            }
+        }
+
+        // Sort nodes on position to obtain alignment
+        for(List<Node> node_list : nodes) {
+            node_list.sort(Comparator.comparingInt(Node::getPosition));
+        }
+
+        return new Alignment(nodes, networks);
     }
 }
