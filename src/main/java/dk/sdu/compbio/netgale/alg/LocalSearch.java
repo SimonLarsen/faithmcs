@@ -193,6 +193,7 @@ public class LocalSearch implements Aligner {
         v.setPosition(i);
     }
 
+    @Override
     public Alignment getAlignment() {
         // copy best solution back into nodes
         for(int i = 0; i < n; ++i) {
@@ -207,5 +208,10 @@ public class LocalSearch implements Aligner {
         }
 
         return new Alignment(nodes, networks);
+    }
+
+    @Override
+    public int getCurrentNumberOfEdges() {
+        return best_quality;
     }
 }

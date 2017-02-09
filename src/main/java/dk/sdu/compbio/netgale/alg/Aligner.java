@@ -6,4 +6,5 @@ public interface Aligner {
     void step();
     void run(int iterations);
     Alignment getAlignment();
+    int getCurrentNumberOfEdges();
 }
