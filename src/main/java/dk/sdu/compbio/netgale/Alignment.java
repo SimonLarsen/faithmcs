@@ -22,6 +22,8 @@ public class Alignment {
         return alignment;
     }
 
+    public List<Network> getNetworks() { return networks; }
+
     public Network buildNetwork() {
         int M = alignment.get(0).size();
 

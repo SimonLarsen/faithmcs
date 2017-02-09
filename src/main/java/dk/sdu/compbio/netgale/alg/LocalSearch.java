@@ -19,7 +19,8 @@ public class LocalSearch implements Aligner {
 
     private final List<NeighborIndex<Node,Edge>> indices;
     private final List<List<Node>> nodes;
-    private final int[][] edges, best_edges;
+    private final int[][] edges;
+    private final int[][] best_positions;
     private int quality, best_quality;
 
     public LocalSearch(List<Network> networks, Model model) {
@@ -51,20 +52,11 @@ public class LocalSearch implements Aligner {
             }
         }
 
-        best_edges = new int[n][M];
-        copyPositions(nodes, best_edges);
-        best_quality = countEdges(best_edges, n);
+        best_positions = new int[n][M];
+        copyPositions(nodes, best_positions);
+        best_quality = countEdges(best_positions, n);
 
-        edges = new int[M][M];
-        for(Network network : networks) {
-            for(Edge e : network.edgeSet()) {
-                int i = e.getSource().getPosition();
-                int j = e.getTarget().getPosition();
-                edges[i][j]++;
-                edges[j][i]++;
-            }
-        }
-
+        edges = EdgeMatrix.compute(networks);
     }
 
     @Override
@@ -117,7 +109,7 @@ public class LocalSearch implements Aligner {
         quality = countEdges(edges, n);
         if(quality > best_quality) {
             best_quality = quality;
-            copyPositions(nodes, best_edges);
+            copyPositions(nodes, best_positions);
         }
     }
 
@@ -198,7 +190,7 @@ public class LocalSearch implements Aligner {
         // copy best solution back into nodes
         for(int i = 0; i < n; ++i) {
             for(int j = 0; j < M; ++j) {
-                nodes.get(i).get(j).setPosition(best_edges[i][j]);
+                nodes.get(i).get(j).setPosition(best_positions[i][j]);
             }
         }
 
