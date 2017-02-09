@@ -212,6 +212,11 @@ public class LocalSearch implements Aligner {
 
     @Override
     public int getCurrentNumberOfEdges() {
+        return quality;
+    }
+
+    @Override
+    public int getBestNumberOfEdges() {
         return best_quality;
     }
 }

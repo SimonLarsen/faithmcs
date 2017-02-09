@@ -7,4 +7,5 @@ public interface Aligner {
     void run(int iterations);
     Alignment getAlignment();
     int getCurrentNumberOfEdges();
+    int getBestNumberOfEdges();
 }
