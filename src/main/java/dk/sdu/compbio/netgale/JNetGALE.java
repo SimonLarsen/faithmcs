@@ -1,7 +1,6 @@
 package dk.sdu.compbio.netgale;
 
 import dk.sdu.compbio.netgale.alg.Aligner;
-import dk.sdu.compbio.netgale.alg.EdgeMatrix;
 import dk.sdu.compbio.netgale.alg.LocalSearch;
 import dk.sdu.compbio.netgale.network.Network;
 import dk.sdu.compbio.netgale.network.io.ImportException;
@@ -24,14 +23,12 @@ public class JNetGALE {
         Option iterations_option = Option.builder("i").longOpt("iterations").hasArg().desc("Number of iterations for algorithm to run.").build();
         Option output_option = Option.builder("o").longOpt("output").hasArg().desc("Output alignment table to file.").build();
         Option output_graph_option = Option.builder("O").longOpt("write-network").hasArg().desc("Output conserved subgraph to file.").build();
-        Option output_edge_matrix_option = Option.builder().longOpt("output-edge-matrix").hasArg().desc("Output edge conservation matrix to file.").build();
 
         Options options = new Options();
         options.addOption(help_option);
         options.addOption(iterations_option);
         options.addOption(output_option);
         options.addOption(output_graph_option);
-        options.addOption(output_edge_matrix_option);
 
         CommandLineParser parser = new DefaultParser();
         CommandLine cmd = parser.parse(options, args);
@@ -70,11 +67,6 @@ public class JNetGALE {
         if(cmd.hasOption("O")) {
             NetworkWriter.write(alignment.buildNetwork(), new File(cmd.getOptionValue("O")));
         }
-
-        if(cmd.hasOption("output-edge-matrix")) {
-            int[][] edges = EdgeMatrix.compute(alignment.getNetworks());
-            writeEdgeMatrix(edges, new File(cmd.getOptionValue("output-edge-matrix")));
-        }
     }
 
     private static void writeAlignment(Alignment alignment, File file) throws FileNotFoundException {
@@ -92,16 +84,6 @@ public class JNetGALE {
                     .collect(Collectors.joining("\t"))
             );
         }
-        pw.close();
-    }
-
-    private static void writeEdgeMatrix(int[][] edges, File file) throws FileNotFoundException {
-        PrintWriter pw = new PrintWriter(file);
-
-        for(int i = 0; i < edges.length; ++i) {
-            pw.println(IntStream.of(edges[i]).mapToObj(Integer::toString).collect(Collectors.joining("\t")));
-        }
-
         pw.close();
     }
 }
