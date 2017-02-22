@@ -21,14 +21,20 @@ public class JNetGALE {
     public static void main(String[] args) throws ParseException, FileNotFoundException, ImportException {
         Option help_option = Option.builder("h").longOpt("help").desc("Show this help text.").build();
         Option iterations_option = Option.builder("i").longOpt("iterations").hasArg().desc("Number of iterations for algorithm to run.").build();
+        Option exceptions_option = Option.builder("e").longOpt("exceptions").hasArg().desc("Number of exceptions allowed per edge in solution.").build();
+        Option connected_option = Option.builder("c").longOpt("connected").desc("Only extract largest connected subnetwork in solution.").build();
         Option output_option = Option.builder("o").longOpt("output").hasArg().desc("Output alignment table to file.").build();
         Option output_graph_option = Option.builder("O").longOpt("write-network").hasArg().desc("Output conserved subgraph to file.").build();
+        Option output_consensus_matrix_option = Option.builder().longOpt("output-consensus-matrix").hasArg().desc("Write consensus matrix to file.").build();
 
         Options options = new Options();
         options.addOption(help_option);
         options.addOption(iterations_option);
+        options.addOption(exceptions_option);
+        options.addOption(connected_option);
         options.addOption(output_option);
         options.addOption(output_graph_option);
+        options.addOption(output_consensus_matrix_option);
 
         CommandLineParser parser = new DefaultParser();
         CommandLine cmd = parser.parse(options, args);
@@ -40,7 +46,7 @@ public class JNetGALE {
             System.exit(1);
         }
 
-        if(cmd.hasOption("h")) {
+        if(cmd.hasOption("help")) {
             help_formatter.printHelp("jnetgale [OPTIONS] network1 network2 [network3 ...]", options);
             System.exit(1);
         }
@@ -60,12 +66,19 @@ public class JNetGALE {
         aligner.run(iterations);
         Alignment alignment = aligner.getAlignment();
 
-        if(cmd.hasOption("o")) {
-            writeAlignment(alignment, new File(cmd.getOptionValue("o")));
+        if(cmd.hasOption("output")) {
+            writeAlignment(alignment, new File(cmd.getOptionValue("output")));
         }
 
-        if(cmd.hasOption("O")) {
-            NetworkWriter.write(alignment.buildNetwork(), new File(cmd.getOptionValue("O")));
+        if(cmd.hasOption("write-network")) {
+            int exceptions = Integer.parseInt(cmd.getOptionValue("exceptions", "0"));
+            NetworkWriter.write(alignment.buildNetwork(exceptions, cmd.hasOption("connected")), new File(cmd.getOptionValue("write-network")));
+        }
+
+        if(cmd.hasOption("output-consensus-matrix")) {
+            EdgeMatrix em = new EdgeMatrix(alignment.getNetworks());
+            ConsensusMatrix cm = new ConsensusMatrix(em, alignment.getNetworks().size());
+            cm.write(new File(cmd.getOptionValue("output-consensus-matrix")));
         }
     }
 

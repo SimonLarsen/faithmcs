@@ -38,7 +38,7 @@ public class EdgeMatrix {
         return count;
     }
 
-    public int getSize() {
+    public int size() {
         return M;
     }
 

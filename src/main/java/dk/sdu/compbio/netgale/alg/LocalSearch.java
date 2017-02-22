@@ -44,7 +44,10 @@ public class LocalSearch implements Aligner {
             indices.add(new NeighborIndex<>(network));
         }
 
-        nodes = networks.stream().map(network -> network.vertexSet().stream().collect(Collectors.toList())).collect(Collectors.toList());
+        nodes = networks.stream()
+                .map(network -> network.vertexSet().stream().collect(Collectors.toList()))
+                .collect(Collectors.toList());
+
         for(int i = 0; i < n; ++i) {
             nodes.get(i).sort(Comparator.comparingInt(networks.get(i)::degreeOf).reversed());
             int pos = 0;
@@ -90,13 +93,13 @@ public class LocalSearch implements Aligner {
                     int finalI = i;
                     int finalJ = j;
 
-                    List<Double> dts = IntStream.range(j+1, M)
+                    List<Integer> dts = IntStream.range(j+1, M)
                             .parallel()
-                            .mapToObj(k -> (double) delta(indices.get(finalI), nodes.get(finalI).get(finalJ), nodes.get(finalI).get(k)))
+                            .mapToObj(k -> delta(indices.get(finalI), nodes.get(finalI).get(finalJ), nodes.get(finalI).get(k)))
                             .collect(Collectors.toList());
 
                     Integer best = IntStream.range(j+1, M).parallel().mapToObj(v -> v).max(Comparator.comparingDouble(k -> dts.get(k-(finalJ+1)))).get();
-                    float dt = delta(indices.get(i), nodes.get(i).get(j), nodes.get(i).get(best));
+                    int dt = delta(indices.get(i), nodes.get(i).get(j), nodes.get(i).get(best));
 
                     if(dt > 0) {
                         repeat = true;
@@ -133,8 +136,8 @@ public class LocalSearch implements Aligner {
         return count;
     }
 
-    private float delta(NeighborIndex<Node,Edge> index, Node u, Node v) {
-        float delta = 0;
+    private int delta(NeighborIndex<Node,Edge> index, Node u, Node v) {
+        int delta = 0;
 
         int i = u.getPosition();
         int j = v.getPosition();

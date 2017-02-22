@@ -4,14 +4,20 @@ import org.jgrapht.graph.DefaultEdge;
 
 public class Edge extends DefaultEdge {
     private final Node source, target;
+    private final int conservation;
     private final int hash_code;
 
-    public Edge(Node source, Node target) {
+    public Edge(Node source, Node target, int conservation) {
         super();
         this.source = source;
         this.target = target;
+        this.conservation = conservation;
 
         this.hash_code = source.hashCode()+target.hashCode();
+    }
+
+    public Edge(Node source, Node target) {
+        this(source, target, 0);
     }
 
     @Override
@@ -23,6 +29,8 @@ public class Edge extends DefaultEdge {
     public Node getTarget() {
         return target;
     }
+
+    public int getConservation() { return conservation; }
 
     @Override
     public int hashCode() {
