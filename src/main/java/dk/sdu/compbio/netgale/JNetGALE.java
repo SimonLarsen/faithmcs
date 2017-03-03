@@ -1,7 +1,7 @@
 package dk.sdu.compbio.netgale;
 
 import dk.sdu.compbio.netgale.alg.Aligner;
-import dk.sdu.compbio.netgale.alg.LocalSearch;
+import dk.sdu.compbio.netgale.alg.IteratedLocalSearch;
 import dk.sdu.compbio.netgale.network.Network;
 import dk.sdu.compbio.netgale.network.io.ImportException;
 import dk.sdu.compbio.netgale.network.io.NetworkReader;
@@ -18,30 +18,25 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 public class JNetGALE {
-    public static void main(String[] args) throws ParseException, FileNotFoundException, ImportException {
-        Option help_option = Option.builder("h").longOpt("help").desc("Show this help text.").build();
-        Option iterations_option = Option.builder("i").longOpt("iterations").hasArg().desc("Number of iterations for algorithm to run.").build();
-        Option exceptions_option = Option.builder("e").longOpt("exceptions").hasArg().desc("Number of exceptions allowed per edge in solution.").build();
-        Option connected_option = Option.builder("c").longOpt("connected").desc("Only extract largest connected subnetwork in solution.").build();
-        Option output_option = Option.builder("o").longOpt("output").hasArg().desc("Output alignment table to file.").build();
-        Option output_graph_option = Option.builder("O").longOpt("write-network").hasArg().desc("Output conserved subgraph to file.").build();
-        Option output_consensus_matrix_option = Option.builder().longOpt("output-consensus-matrix").hasArg().desc("Write consensus matrix to file.").build();
+    private static final float DEFAULT_PERTURBATION = 0.1f;
 
+    public static void main(String[] args) throws ParseException, FileNotFoundException, ImportException {
         Options options = new Options();
-        options.addOption(help_option);
-        options.addOption(iterations_option);
-        options.addOption(exceptions_option);
-        options.addOption(connected_option);
-        options.addOption(output_option);
-        options.addOption(output_graph_option);
-        options.addOption(output_consensus_matrix_option);
+        options.addOption("h", "help", false, "Show this help text");
+        options.addOption("i", "iterations", true, "Number of iterations for algorithm to run.");
+        options.addOption("p", "perturbation", true, String.format("Ratio of node to swap during perturbation. Default: %f.", DEFAULT_PERTURBATION));
+        options.addOption("e", "exceptions", true, "Number of exceptions allowed per edge in solution.");
+        options.addOption("c", "connected", false, "Only extract largest connected subnetwork in solution.");
+        options.addOption("o", "output", true, "Output alignment table to file.");
+        options.addOption("n", "network", true, "Output conserved subgraph to file.");
+        options.addOption(null, "consensus-matrix", true, "Write consensus matrix to file.");
 
         CommandLineParser parser = new DefaultParser();
         CommandLine cmd = parser.parse(options, args);
         HelpFormatter help_formatter = new HelpFormatter();
 
         if(cmd.getArgList().size() < 2) {
-            System.err.println("error: Needs AT LEAST two networks for alignment.");
+            System.err.println("error: Needs at least two networks for alignment.");
             help_formatter.printHelp("jnetgale [OPTIONS] network1 network2 [network3 ...]", options);
             System.exit(1);
         }
@@ -62,7 +57,8 @@ public class JNetGALE {
 
         Model model = new Model();
 
-        Aligner aligner = new LocalSearch(networks, model);
+        float perturbation = Float.parseFloat(cmd.getOptionValue("perturbation", Float.toString(DEFAULT_PERTURBATION)));
+        Aligner aligner = new IteratedLocalSearch(networks, model, perturbation);
         aligner.run(iterations);
         Alignment alignment = aligner.getAlignment();
 
@@ -70,15 +66,15 @@ public class JNetGALE {
             writeAlignment(alignment, new File(cmd.getOptionValue("output")));
         }
 
-        if(cmd.hasOption("write-network")) {
+        if(cmd.hasOption("network")) {
             int exceptions = Integer.parseInt(cmd.getOptionValue("exceptions", "0"));
-            NetworkWriter.write(alignment.buildNetwork(exceptions, cmd.hasOption("connected")), new File(cmd.getOptionValue("write-network")));
+            NetworkWriter.write(alignment.buildNetwork(exceptions, cmd.hasOption("connected")), new File(cmd.getOptionValue("network")));
         }
 
-        if(cmd.hasOption("output-consensus-matrix")) {
+        if(cmd.hasOption("consensus-matrix")) {
             EdgeMatrix em = new EdgeMatrix(alignment.getNetworks());
             ConsensusMatrix cm = new ConsensusMatrix(em, alignment.getNetworks().size());
-            cm.write(new File(cmd.getOptionValue("output-consensus-matrix")));
+            cm.write(new File(cmd.getOptionValue("consensus-matrix")));
         }
     }
 

@@ -13,7 +13,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-public class LocalSearch implements Aligner {
+public class IteratedLocalSearch implements Aligner {
     private final int n, M;
     private final List<Network> networks;
     private final Model model;
@@ -21,13 +21,19 @@ public class LocalSearch implements Aligner {
     private final List<NeighborIndex<Node,Edge>> indices;
     private final List<List<Node>> nodes;
     private final EdgeMatrix edges;
+    private float perturbation_amount;
     private final int[][] best_positions;
     private int quality, best_quality;
     private final Random rand;
 
-    public LocalSearch(List<Network> networks, Model model) {
+    public IteratedLocalSearch(List<Network> networks, Model model) {
+        this(networks, model, 0.1f);
+    }
+
+    public IteratedLocalSearch(List<Network> networks, Model model, float perturbation_amount) {
         this.networks = networks;
         this.model = model;
+        this.perturbation_amount = perturbation_amount;
 
         n = networks.size();
         M = networks.stream().mapToInt(v -> v.vertexSet().size()).max().getAsInt();
@@ -74,8 +80,10 @@ public class LocalSearch implements Aligner {
 
     @Override
     public void step() {
+        // perturbation step
+        int count = Math.round(M * perturbation_amount);
         for(int i = 1; i < n; ++i) {
-            for(int rep = 0; rep < M/10; ++rep) {
+            for(int rep = 0; rep < count; ++rep) {
                 int j = rand.nextInt(M);
                 int k;
                 do k = rand.nextInt(M);
@@ -210,5 +218,9 @@ public class LocalSearch implements Aligner {
     @Override
     public int getBestNumberOfEdges() {
         return best_quality;
+    }
+
+    public void setPerturbationAmount(float a) {
+        this.perturbation_amount = a;
     }
 }
