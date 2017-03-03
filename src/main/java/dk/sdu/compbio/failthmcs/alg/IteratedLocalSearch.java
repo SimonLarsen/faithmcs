@@ -1,12 +1,8 @@
-package dk.sdu.compbio.netgale.alg;
+package dk.sdu.compbio.failthmcs.alg;
 
 import com.google.common.collect.Sets;
-import dk.sdu.compbio.netgale.Alignment;
-import dk.sdu.compbio.netgale.EdgeMatrix;
-import dk.sdu.compbio.netgale.Model;
-import dk.sdu.compbio.netgale.network.Edge;
-import dk.sdu.compbio.netgale.network.Network;
-import dk.sdu.compbio.netgale.network.Node;
+import dk.sdu.compbio.failthmcs.EdgeMatrix;
+import dk.sdu.compbio.failthmcs.network.Edge;
 import org.jgrapht.alg.NeighborIndex;
 
 import java.util.*;
@@ -15,22 +11,22 @@ import java.util.stream.IntStream;
 
 public class IteratedLocalSearch implements Aligner {
     private final int n, M;
-    private final List<Network> networks;
-    private final Model model;
+    private final List<dk.sdu.compbio.failthmcs.network.Network> networks;
+    private final dk.sdu.compbio.failthmcs.Model model;
 
-    private final List<NeighborIndex<Node,Edge>> indices;
-    private final List<List<Node>> nodes;
+    private final List<NeighborIndex<dk.sdu.compbio.failthmcs.network.Node,Edge>> indices;
+    private final List<List<dk.sdu.compbio.failthmcs.network.Node>> nodes;
     private final EdgeMatrix edges;
     private float perturbation_amount;
     private final int[][] best_positions;
     private int quality, best_quality;
     private final Random rand;
 
-    public IteratedLocalSearch(List<Network> networks, Model model) {
+    public IteratedLocalSearch(List<dk.sdu.compbio.failthmcs.network.Network> networks, dk.sdu.compbio.failthmcs.Model model) {
         this(networks, model, 0.1f);
     }
 
-    public IteratedLocalSearch(List<Network> networks, Model model, float perturbation_amount) {
+    public IteratedLocalSearch(List<dk.sdu.compbio.failthmcs.network.Network> networks, dk.sdu.compbio.failthmcs.Model model, float perturbation_amount) {
         this.networks = networks;
         this.model = model;
         this.perturbation_amount = perturbation_amount;
@@ -40,10 +36,10 @@ public class IteratedLocalSearch implements Aligner {
 
         indices = new ArrayList<>();
 
-        for(Network network : networks) {
+        for(dk.sdu.compbio.failthmcs.network.Network network : networks) {
             int fid = 0;
             while(network.vertexSet().size() < M) {
-                Node fake_node = new Node("$fake$" + fid++, true);
+                dk.sdu.compbio.failthmcs.network.Node fake_node = new dk.sdu.compbio.failthmcs.network.Node("$fake$" + fid++, true);
                 network.addVertex(fake_node);
             }
 
@@ -57,7 +53,7 @@ public class IteratedLocalSearch implements Aligner {
         for(int i = 0; i < n; ++i) {
             nodes.get(i).sort(Comparator.comparingInt(networks.get(i)::degreeOf).reversed());
             int pos = 0;
-            for(Node node : nodes.get(i)) {
+            for(dk.sdu.compbio.failthmcs.network.Node node : nodes.get(i)) {
                 node.setPosition(pos++);
             }
         }
@@ -125,7 +121,7 @@ public class IteratedLocalSearch implements Aligner {
         }
     }
 
-    private void copyPositions(List<List<Node>> nodes, int[][] positions) {
+    private void copyPositions(List<List<dk.sdu.compbio.failthmcs.network.Node>> nodes, int[][] positions) {
         for(int i = 0; i < nodes.size(); ++i) {
             for(int j = 0; j < nodes.get(i).size(); ++j) {
                 positions[i][j] = nodes.get(i).get(j).getPosition();
@@ -144,13 +140,13 @@ public class IteratedLocalSearch implements Aligner {
         return count;
     }
 
-    private int delta(NeighborIndex<Node,Edge> index, Node u, Node v) {
+    private int delta(NeighborIndex<dk.sdu.compbio.failthmcs.network.Node,Edge> index, dk.sdu.compbio.failthmcs.network.Node u, dk.sdu.compbio.failthmcs.network.Node v) {
         int delta = 0;
 
         int i = u.getPosition();
         int j = v.getPosition();
 
-        for(Node w : Sets.difference(index.neighborsOf(u), index.neighborsOf(v))){
+        for(dk.sdu.compbio.failthmcs.network.Node w : Sets.difference(index.neighborsOf(u), index.neighborsOf(v))){
             if(w != v) {
                 int l = w.getPosition();
                 delta -= 2 * edges.get(i, l) - 1;
@@ -158,7 +154,7 @@ public class IteratedLocalSearch implements Aligner {
             }
         }
 
-        for(Node w : Sets.difference(index.neighborsOf(v), index.neighborsOf(u))) {
+        for(dk.sdu.compbio.failthmcs.network.Node w : Sets.difference(index.neighborsOf(v), index.neighborsOf(u))) {
             if(w != u) {
                 int l = w.getPosition();
                 delta -= 2 * edges.get(j, l) - 1;
@@ -169,11 +165,11 @@ public class IteratedLocalSearch implements Aligner {
         return delta;
     }
 
-    private void swap(NeighborIndex<Node,Edge> index, Node u, Node v) {
+    private void swap(NeighborIndex<dk.sdu.compbio.failthmcs.network.Node,Edge> index, dk.sdu.compbio.failthmcs.network.Node u, dk.sdu.compbio.failthmcs.network.Node v) {
         int i = u.getPosition();
         int j = v.getPosition();
 
-        for(Node w : Sets.difference(index.neighborsOf(u), index.neighborsOf(v))) {
+        for(dk.sdu.compbio.failthmcs.network.Node w : Sets.difference(index.neighborsOf(u), index.neighborsOf(v))) {
             if(w != v) {
                 int l = w.getPosition();
                 edges.decrement(i, l);
@@ -181,7 +177,7 @@ public class IteratedLocalSearch implements Aligner {
             }
         }
 
-        for(Node w : Sets.difference(index.neighborsOf(v), index.neighborsOf(u))) {
+        for(dk.sdu.compbio.failthmcs.network.Node w : Sets.difference(index.neighborsOf(v), index.neighborsOf(u))) {
             if(w != u) {
                 int l = w.getPosition();
                 edges.decrement(j, l);
@@ -194,7 +190,7 @@ public class IteratedLocalSearch implements Aligner {
     }
 
     @Override
-    public Alignment getAlignment() {
+    public dk.sdu.compbio.failthmcs.Alignment getAlignment() {
         // copy best solution back into nodes
         for(int i = 0; i < n; ++i) {
             for(int j = 0; j < M; ++j) {
@@ -203,11 +199,11 @@ public class IteratedLocalSearch implements Aligner {
         }
 
         // Sort nodes on position to obtain alignment
-        for(List<Node> node_list : nodes) {
-            node_list.sort(Comparator.comparingInt(Node::getPosition));
+        for(List<dk.sdu.compbio.failthmcs.network.Node> node_list : nodes) {
+            node_list.sort(Comparator.comparingInt(dk.sdu.compbio.failthmcs.network.Node::getPosition));
         }
 
-        return new Alignment(nodes, networks);
+        return new dk.sdu.compbio.failthmcs.Alignment(nodes, networks);
     }
 
     @Override

@@ -1,4 +1,4 @@
-package dk.sdu.compbio.netgale;
+package dk.sdu.compbio.failthmcs;
 
 import java.io.File;
 import java.io.FileNotFoundException;

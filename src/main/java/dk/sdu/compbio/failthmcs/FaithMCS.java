@@ -1,12 +1,9 @@
-package dk.sdu.compbio.netgale;
+package dk.sdu.compbio.failthmcs;
 
-import dk.sdu.compbio.netgale.alg.Aligner;
-import dk.sdu.compbio.netgale.alg.IteratedLocalSearch;
-import dk.sdu.compbio.netgale.network.Network;
-import dk.sdu.compbio.netgale.network.io.ImportException;
-import dk.sdu.compbio.netgale.network.io.NetworkReader;
-import dk.sdu.compbio.netgale.network.io.NetworkWriter;
-import dk.sdu.compbio.netgale.network.Node;
+import dk.sdu.compbio.failthmcs.alg.Aligner;
+import dk.sdu.compbio.failthmcs.alg.IteratedLocalSearch;
+import dk.sdu.compbio.failthmcs.network.io.ImportException;
+import dk.sdu.compbio.failthmcs.network.io.NetworkReader;
 import org.apache.commons.cli.*;
 
 import java.io.File;
@@ -17,7 +14,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-public class JNetGALE {
+public class FaithMCS {
     private static final float DEFAULT_PERTURBATION = 0.1f;
 
     public static void main(String[] args) throws ParseException, FileNotFoundException, ImportException {
@@ -37,20 +34,20 @@ public class JNetGALE {
 
         if(cmd.getArgList().size() < 2) {
             System.err.println("error: Needs at least two networks for alignment.");
-            help_formatter.printHelp("jnetgale [OPTIONS] network1 network2 [network3 ...]", options);
+            help_formatter.printHelp("FaithMCS [OPTIONS] network1 network2 [network3 ...]", options);
             System.exit(1);
         }
 
         if(cmd.hasOption("help")) {
-            help_formatter.printHelp("jnetgale [OPTIONS] network1 network2 [network3 ...]", options);
+            help_formatter.printHelp("FaithMCS [OPTIONS] network1 network2 [network3 ...]", options);
             System.exit(1);
         }
 
         int iterations = Integer.parseInt(cmd.getOptionValue("i", "20"));
 
-        List<Network> networks = new ArrayList<>();
+        List<dk.sdu.compbio.failthmcs.network.Network> networks = new ArrayList<>();
         for(String path : cmd.getArgList()) {
-            Network network = new Network();
+            dk.sdu.compbio.failthmcs.network.Network network = new dk.sdu.compbio.failthmcs.network.Network();
             NetworkReader.read(network, new File(path));
             networks.add(network);
         }
@@ -68,7 +65,7 @@ public class JNetGALE {
 
         if(cmd.hasOption("network")) {
             int exceptions = Integer.parseInt(cmd.getOptionValue("exceptions", "0"));
-            NetworkWriter.write(alignment.buildNetwork(exceptions, cmd.hasOption("connected")), new File(cmd.getOptionValue("network")));
+            dk.sdu.compbio.failthmcs.network.io.NetworkWriter.write(alignment.buildNetwork(exceptions, cmd.hasOption("connected")), new File(cmd.getOptionValue("network")));
         }
 
         if(cmd.hasOption("consensus-matrix")) {
@@ -80,7 +77,7 @@ public class JNetGALE {
 
     private static void writeAlignment(Alignment alignment, File file) throws FileNotFoundException {
         PrintWriter pw = new PrintWriter(file);
-        List<List<Node>> align = alignment.getAlignment();
+        List<List<dk.sdu.compbio.failthmcs.network.Node>> align = alignment.getAlignment();
         int n = align.size();
         int M = align.get(0).size();
 
@@ -89,7 +86,7 @@ public class JNetGALE {
             pw.println(IntStream.range(0, n)
                     .mapToObj(i -> align.get(i).get(finalJ))
                     .filter(node -> !node.isFake())
-                    .map(Node::toString)
+                    .map(dk.sdu.compbio.failthmcs.network.Node::toString)
                     .collect(Collectors.joining("\t"))
             );
         }

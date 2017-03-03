@@ -1,8 +1,7 @@
-package dk.sdu.compbio.netgale;
+package dk.sdu.compbio.failthmcs;
 
-import dk.sdu.compbio.netgale.network.Edge;
-import dk.sdu.compbio.netgale.network.Network;
-import dk.sdu.compbio.netgale.network.Node;
+import dk.sdu.compbio.failthmcs.network.Edge;
+import dk.sdu.compbio.failthmcs.network.Node;
 import org.jgrapht.alg.ConnectivityInspector;
 
 import java.util.*;
@@ -11,9 +10,9 @@ import java.util.stream.IntStream;
 
 public class Alignment {
     private final List<List<Node>> alignment;
-    private final List<Network> networks;
+    private final List<dk.sdu.compbio.failthmcs.network.Network> networks;
 
-    public Alignment(List<List<Node>> alignment, List<Network> networks) {
+    public Alignment(List<List<Node>> alignment, List<dk.sdu.compbio.failthmcs.network.Network> networks) {
         this.alignment = alignment;
         this.networks = networks;
     }
@@ -22,13 +21,13 @@ public class Alignment {
         return alignment;
     }
 
-    public List<Network> getNetworks() { return networks; }
+    public List<dk.sdu.compbio.failthmcs.network.Network> getNetworks() { return networks; }
 
-    public Network buildNetwork(int exceptions, boolean connected) {
+    public dk.sdu.compbio.failthmcs.network.Network buildNetwork(int exceptions, boolean connected) {
         int M = alignment.get(0).size();
 
         int[][] edges = new int[M][M];
-        for(Network network : networks) {
+        for(dk.sdu.compbio.failthmcs.network.Network network : networks) {
             for(Edge e : network.edgeSet()) {
                 int i = e.getSource().getPosition();
                 int j = e.getTarget().getPosition();
@@ -37,7 +36,7 @@ public class Alignment {
             }
         }
 
-        Network network = new Network();
+        dk.sdu.compbio.failthmcs.network.Network network = new dk.sdu.compbio.failthmcs.network.Network();
         List<Node> nodes = new ArrayList<>();
         for(int i = 0; i < M; ++i) {
             int finalI = i;

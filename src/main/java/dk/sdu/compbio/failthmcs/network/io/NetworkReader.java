@@ -1,12 +1,10 @@
-package dk.sdu.compbio.netgale.network.io;
-
-import dk.sdu.compbio.netgale.network.Network;
+package dk.sdu.compbio.failthmcs.network.io;
 
 import java.io.File;
 import java.io.FileNotFoundException;
 
 public class NetworkReader {
-    public static void read(Network network, File file) throws FileNotFoundException, ImportException {
+    public static void read(dk.sdu.compbio.failthmcs.network.Network network, File file) throws FileNotFoundException, ImportException {
         String path = file.getPath();
         int dotpos = path.lastIndexOf('.');
         if(dotpos == -1 || dotpos == path.length()) {
@@ -14,13 +12,13 @@ public class NetworkReader {
         }
         String ending = path.substring(dotpos+1);
 
-        Importer importer = null;
+        dk.sdu.compbio.failthmcs.network.io.Importer importer = null;
         switch(ending) {
             case "sif":
-                importer = new SIFImporter(); break;
+                importer = new dk.sdu.compbio.failthmcs.network.io.SIFImporter(); break;
             case "gw":
             case "leda":
-                importer = new LEDAImporter(); break;
+                importer = new dk.sdu.compbio.failthmcs.network.io.LEDAImporter(); break;
         }
 
         if(importer == null) throw new IllegalArgumentException("Unrecognized file format: " + ending);

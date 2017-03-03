@@ -1,11 +1,9 @@
-package dk.sdu.compbio.netgale.alg;
-
-import dk.sdu.compbio.netgale.Alignment;
+package dk.sdu.compbio.failthmcs.alg;
 
 public interface Aligner {
     void step();
     void run(int iterations);
-    Alignment getAlignment();
+    dk.sdu.compbio.failthmcs.Alignment getAlignment();
     int getCurrentNumberOfEdges();
     int getBestNumberOfEdges();
 }

@@ -1,7 +1,4 @@
-package dk.sdu.compbio.netgale;
-
-import dk.sdu.compbio.netgale.network.Edge;
-import dk.sdu.compbio.netgale.network.Network;
+package dk.sdu.compbio.failthmcs;
 
 import java.util.List;
 
@@ -15,12 +12,12 @@ public class EdgeMatrix {
         this.edges = new int[M*(M+1)/2];
     }
 
-    public EdgeMatrix(List<Network> networks) {
+    public EdgeMatrix(List<dk.sdu.compbio.failthmcs.network.Network> networks) {
         this.n = networks.size();
         this.M = networks.stream().mapToInt(v -> v.vertexSet().size()).max().getAsInt();
         this.edges = new int[M*(M+1)/2];
-        for(Network network : networks) {
-            for(Edge e : network.edgeSet()) {
+        for(dk.sdu.compbio.failthmcs.network.Network network : networks) {
+            for(dk.sdu.compbio.failthmcs.network.Edge e : network.edgeSet()) {
                 int i = e.getSource().getPosition();
                 int j = e.getTarget().getPosition();
                 increment(i, j);

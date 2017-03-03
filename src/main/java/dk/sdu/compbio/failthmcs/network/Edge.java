@@ -1,4 +1,4 @@
-package dk.sdu.compbio.netgale.network;
+package dk.sdu.compbio.failthmcs.network;
 
 import org.jgrapht.graph.DefaultEdge;
 
