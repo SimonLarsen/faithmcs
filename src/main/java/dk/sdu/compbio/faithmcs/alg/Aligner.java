@@ -1,9 +1,11 @@
-package dk.sdu.compbio.failthmcs.alg;
+package dk.sdu.compbio.faithmcs.alg;
+
+import dk.sdu.compbio.faithmcs.Alignment;
 
 public interface Aligner {
     void step();
     void run(int iterations);
-    dk.sdu.compbio.failthmcs.Alignment getAlignment();
+    Alignment getAlignment();
     int getCurrentNumberOfEdges();
     int getBestNumberOfEdges();
 }

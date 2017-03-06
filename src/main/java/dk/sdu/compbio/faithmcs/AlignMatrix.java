@@ -1,8 +1,11 @@
-package dk.sdu.compbio.failthmcs;
+package dk.sdu.compbio.faithmcs;
 
 import com.google.common.collect.Sets;
-import dk.sdu.compbio.failthmcs.network.Edge;
-import dk.sdu.compbio.failthmcs.network.io.ImportException;
+import dk.sdu.compbio.faithmcs.network.Edge;
+import dk.sdu.compbio.faithmcs.network.Network;
+import dk.sdu.compbio.faithmcs.network.Node;
+import dk.sdu.compbio.faithmcs.network.io.ImportException;
+import dk.sdu.compbio.faithmcs.network.io.NetworkReader;
 import org.jgrapht.alg.NeighborIndex;
 
 import java.io.File;
@@ -14,15 +17,15 @@ import java.util.Random;
 public class AlignMatrix {
     private final int M;
     private final ConsensusMatrix motif;
-    private final dk.sdu.compbio.failthmcs.network.Network network;
+    private final Network network;
     private final int[] best_solution;
-    private final NeighborIndex<dk.sdu.compbio.failthmcs.network.Node,Edge> index;
-    private final List<dk.sdu.compbio.failthmcs.network.Node> nodes;
+    private final NeighborIndex<Node,Edge> index;
+    private final List<Node> nodes;
     private final Random rand;
 
     private float quality, best_quality;
 
-    public AlignMatrix(ConsensusMatrix motif, dk.sdu.compbio.failthmcs.network.Network network) {
+    public AlignMatrix(ConsensusMatrix motif, Network network) {
         this.motif = motif;
         this.network = network;
 
@@ -31,7 +34,7 @@ public class AlignMatrix {
         // pad with fake nodes if necessary
         int fid = 0;
         while(network.vertexSet().size() < M) {
-            dk.sdu.compbio.failthmcs.network.Node fake_node = new dk.sdu.compbio.failthmcs.network.Node("$fake$"+fid++, true);
+            Node fake_node = new Node("$fake$"+fid++, true);
             network.addVertex(fake_node);
         }
 
@@ -117,13 +120,13 @@ public class AlignMatrix {
         return quality;
     }
 
-    private float delta(dk.sdu.compbio.failthmcs.network.Node u, dk.sdu.compbio.failthmcs.network.Node v) {
+    private float delta(Node u, Node v) {
         float delta = 0;
 
         int i = u.getPosition();
         int j = v.getPosition();
 
-        for(dk.sdu.compbio.failthmcs.network.Node w : Sets.difference(index.neighborsOf(u), index.neighborsOf(v))) {
+        for(Node w : Sets.difference(index.neighborsOf(u), index.neighborsOf(v))) {
             if(w != v) {
                 int l = w.getPosition();
                 delta -= Math.pow(motif.get(i, l), 2.0f);
@@ -131,7 +134,7 @@ public class AlignMatrix {
             }
         }
 
-        for(dk.sdu.compbio.failthmcs.network.Node w : Sets.difference(index.neighborsOf(v), index.neighborsOf(u))) {
+        for(Node w : Sets.difference(index.neighborsOf(v), index.neighborsOf(u))) {
             if(w != u) {
                 int l = w.getPosition();
                 delta -= Math.pow(motif.get(j, l), 2.0f);
@@ -142,7 +145,7 @@ public class AlignMatrix {
         return delta;
     }
 
-    private void swap(dk.sdu.compbio.failthmcs.network.Node u, dk.sdu.compbio.failthmcs.network.Node v) {
+    private void swap(Node u, Node v) {
         int i = u.getPosition();
         int j = v.getPosition();
 
@@ -152,8 +155,8 @@ public class AlignMatrix {
 
     public static void main(String[] args) throws FileNotFoundException, ImportException {
         ConsensusMatrix cm = ConsensusMatrix.read(new File(args[0]));
-        dk.sdu.compbio.failthmcs.network.Network network = new dk.sdu.compbio.failthmcs.network.Network();
-        dk.sdu.compbio.failthmcs.network.io.NetworkReader.read(network, new File(args[1]));
+        Network network = new Network();
+        NetworkReader.read(network, new File(args[1]));
 
         AlignMatrix aligner = new AlignMatrix(cm, network);
         aligner.run(Integer.parseInt(args[2]));

@@ -1,23 +1,29 @@
-package dk.sdu.compbio.failthmcs.network;
+package dk.sdu.compbio.faithmcs.network;
 
 import org.jgrapht.graph.DefaultEdge;
 
 public class Edge extends DefaultEdge {
     private final Node source, target;
     private final int conservation;
+    private final String label;
     private final int hash_code;
 
-    public Edge(Node source, Node target, int conservation) {
+    public Edge(Node source, Node target, String label, int conservation) {
         super();
         this.source = source;
         this.target = target;
+        this.label = label;
         this.conservation = conservation;
 
         this.hash_code = source.hashCode()+target.hashCode();
     }
 
+    public Edge(Node source, Node target, String label) {
+        this(source, target, label, 0);
+    }
+
     public Edge(Node source, Node target) {
-        this(source, target, 0);
+        this(source, target, "", 0);
     }
 
     @Override
@@ -31,6 +37,8 @@ public class Edge extends DefaultEdge {
     }
 
     public int getConservation() { return conservation; }
+
+    public String getLabel() { return label; }
 
     @Override
     public int hashCode() {

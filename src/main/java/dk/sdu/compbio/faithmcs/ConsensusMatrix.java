@@ -1,4 +1,4 @@
-package dk.sdu.compbio.failthmcs;
+package dk.sdu.compbio.faithmcs;
 
 import java.io.File;
 import java.io.FileNotFoundException;

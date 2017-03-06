@@ -9,6 +9,8 @@
     <version>1.0-SNAPSHOT</version>
     <packaging>jar</packaging>
 
+    <name>faithMCS</name>
+
     <build>
         <plugins>
             <plugin>
@@ -33,7 +35,7 @@
                         <configuration>
                             <transformers>
                                 <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                                    <mainClass>dk.sdu.compbio.failthmcs.FaithMCS</mainClass>
+                                    <mainClass>dk.sdu.compbio.faithmcs.FaithMCS</mainClass>
                                 </transformer>
                             </transformers>
                         </configuration>

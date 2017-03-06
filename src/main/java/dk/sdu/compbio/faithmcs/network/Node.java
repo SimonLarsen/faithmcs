@@ -1,4 +1,4 @@
-package dk.sdu.compbio.failthmcs.network;
+package dk.sdu.compbio.faithmcs.network;
 
 public class Node {
     private final String label;

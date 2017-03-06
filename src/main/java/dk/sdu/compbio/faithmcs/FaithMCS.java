@@ -1,9 +1,12 @@
-package dk.sdu.compbio.failthmcs;
+package dk.sdu.compbio.faithmcs;
 
-import dk.sdu.compbio.failthmcs.alg.Aligner;
-import dk.sdu.compbio.failthmcs.alg.IteratedLocalSearch;
-import dk.sdu.compbio.failthmcs.network.io.ImportException;
-import dk.sdu.compbio.failthmcs.network.io.NetworkReader;
+import dk.sdu.compbio.faithmcs.alg.Aligner;
+import dk.sdu.compbio.faithmcs.alg.IteratedLocalSearch;
+import dk.sdu.compbio.faithmcs.network.Network;
+import dk.sdu.compbio.faithmcs.network.Node;
+import dk.sdu.compbio.faithmcs.network.io.ImportException;
+import dk.sdu.compbio.faithmcs.network.io.NetworkReader;
+import dk.sdu.compbio.faithmcs.network.io.NetworkWriter;
 import org.apache.commons.cli.*;
 
 import java.io.File;
@@ -45,17 +48,15 @@ public class FaithMCS {
 
         int iterations = Integer.parseInt(cmd.getOptionValue("i", "20"));
 
-        List<dk.sdu.compbio.failthmcs.network.Network> networks = new ArrayList<>();
+        List<Network> networks = new ArrayList<>();
         for(String path : cmd.getArgList()) {
-            dk.sdu.compbio.failthmcs.network.Network network = new dk.sdu.compbio.failthmcs.network.Network();
+            Network network = new Network();
             NetworkReader.read(network, new File(path));
             networks.add(network);
         }
 
-        Model model = new Model();
-
         float perturbation = Float.parseFloat(cmd.getOptionValue("perturbation", Float.toString(DEFAULT_PERTURBATION)));
-        Aligner aligner = new IteratedLocalSearch(networks, model, perturbation);
+        Aligner aligner = new IteratedLocalSearch(networks, perturbation);
         aligner.run(iterations);
         Alignment alignment = aligner.getAlignment();
 
@@ -65,7 +66,7 @@ public class FaithMCS {
 
         if(cmd.hasOption("network")) {
             int exceptions = Integer.parseInt(cmd.getOptionValue("exceptions", "0"));
-            dk.sdu.compbio.failthmcs.network.io.NetworkWriter.write(alignment.buildNetwork(exceptions, cmd.hasOption("connected")), new File(cmd.getOptionValue("network")));
+            NetworkWriter.write(alignment.buildNetwork(exceptions, cmd.hasOption("connected")), new File(cmd.getOptionValue("network")));
         }
 
         if(cmd.hasOption("consensus-matrix")) {
@@ -77,7 +78,7 @@ public class FaithMCS {
 
     private static void writeAlignment(Alignment alignment, File file) throws FileNotFoundException {
         PrintWriter pw = new PrintWriter(file);
-        List<List<dk.sdu.compbio.failthmcs.network.Node>> align = alignment.getAlignment();
+        List<List<Node>> align = alignment.getAlignment();
         int n = align.size();
         int M = align.get(0).size();
 
@@ -86,7 +87,7 @@ public class FaithMCS {
             pw.println(IntStream.range(0, n)
                     .mapToObj(i -> align.get(i).get(finalJ))
                     .filter(node -> !node.isFake())
-                    .map(dk.sdu.compbio.failthmcs.network.Node::toString)
+                    .map(Node::toString)
                     .collect(Collectors.joining("\t"))
             );
         }
