@@ -24,10 +24,6 @@ public class IteratedLocalSearch implements Aligner {
     private int quality, best_quality;
     private final Random rand;
 
-    public IteratedLocalSearch(List<Network> networks) {
-        this(networks, .1f);
-    }
-
     public IteratedLocalSearch(List<Network> networks, float perturbation_amount) {
         this.networks = networks;
         this.perturbation_amount = perturbation_amount;
@@ -37,8 +33,8 @@ public class IteratedLocalSearch implements Aligner {
 
         indices = new ArrayList<>();
 
+        int fid = 0;
         for(Network network : networks) {
-            int fid = 0;
             while(network.vertexSet().size() < M) {
                 Node fake_node = new Node("$fake$" + fid++, true);
                 network.addVertex(fake_node);

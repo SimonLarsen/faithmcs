@@ -41,16 +41,21 @@ public class Alignment {
         List<Node> nodes = new ArrayList<>();
         for(int i = 0; i < M; ++i) {
             int finalI = i;
-            String label = IntStream.range(0, networks.size()).mapToObj(j -> alignment.get(j).get(finalI).getLabel()).collect(Collectors.joining(","));
-            boolean fake = IntStream.range(0, networks.size()).anyMatch(j -> alignment.get(j).get(finalI).isFake());
+            String label = IntStream.range(0, networks.size())
+                    .mapToObj(j -> alignment.get(j).get(finalI))
+                    .map(Node::getLabel)
+                    .collect(Collectors.joining(","));
+            boolean fake = IntStream.range(0, networks.size())
+                    .anyMatch(j -> alignment.get(j).get(finalI).isFake());
             Node node = new Node(label, fake);
+            node.setPosition(i);
             nodes.add(node);
             network.addVertex(node);
         }
 
         for(int i = 0; i < M; ++i) {
             for(int j = i+1; j < M; ++j) {
-                if(edges[i][j] >= networks.size() - exceptions && !nodes.get(i).isFake() && !nodes.get(j).isFake()) {
+                if(edges[i][j] >= networks.size() - exceptions) {
                     int finalI = i;
                     int finalJ = j;
                     String label = IntStream.range(0, networks.size())
