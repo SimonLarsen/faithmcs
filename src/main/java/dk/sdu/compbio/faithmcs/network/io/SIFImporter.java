@@ -18,7 +18,7 @@ class SIFImporter implements Importer {
         Scanner scan = new Scanner(file);
         while(scan.hasNextLine()) {
             String line = scan.nextLine().trim();
-            String[] parts = line.split("\t");
+            String[] parts = line.split("[ \t]");
             if(parts.length == 0) continue;
             Node source = getNode(parts[0], nodeMap, network);
             if(parts.length >= 3) {
