@@ -19,7 +19,7 @@ import java.util.stream.IntStream;
 
 public class FaithMCS {
     private static final int DEFAULT_EXCEPTIONS = 0;
-    private static final float DEFAULT_PERTURBATION = 0.1f;
+    private static final float DEFAULT_PERTURBATION = 0.2f;
     private static final int DEFAULT_MAX_NONIMPROVING = 20;
 
     public static void main(String[] args) throws ParseException, FileNotFoundException, ImportException {
