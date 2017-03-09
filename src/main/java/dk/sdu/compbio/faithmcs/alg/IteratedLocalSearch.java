@@ -64,15 +64,19 @@ public class IteratedLocalSearch implements Aligner {
     }
 
     @Override
-    public void run(int iterations) {
-        for(int iteration = 0; iteration < iterations; ++iteration) {
-            step();
+    public void run(int max_nonimproving) {
+        int nonimproving = 0;
+        while(nonimproving < max_nonimproving) {
+            nonimproving++;
+            if(step()) {
+                nonimproving = 0;
+            }
             System.err.println(String.format("current: %d edges, best: %d edges", quality, best_quality));
         }
     }
 
     @Override
-    public void step() {
+    public boolean step() {
         // perturbation step
         int count = Math.round(M * perturbation_amount);
         for(int i = 1; i < n; ++i) {
@@ -115,7 +119,9 @@ public class IteratedLocalSearch implements Aligner {
         if(quality > best_quality) {
             best_quality = quality;
             copyPositions(nodes, best_positions);
+            return true;
         }
+        return false;
     }
 
     private void copyPositions(List<List<Node>> nodes, int[][] positions) {

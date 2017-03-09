@@ -24,7 +24,7 @@ public class Alignment {
 
     public List<Network> getNetworks() { return networks; }
 
-    public Network buildNetwork(int exceptions, boolean connected) {
+    public Network buildNetwork(int exceptions, boolean connected, boolean remove_leaf_exceptions) {
         int M = alignment.get(0).size();
 
         int[][] edges = new int[M][M];
@@ -77,6 +77,17 @@ public class Alignment {
                 if(s != largest) remove.addAll(s);
             });
             network.removeAllVertices(remove);
+        }
+
+        if(remove_leaf_exceptions) {
+            List<Node> remove_nodes = new ArrayList<>();
+            for(Edge e : network.edgeSet()) {
+                if(e.getConservation() < networks.size()) {
+                    if(network.degreeOf(e.getSource()) == 1) remove_nodes.add(e.getSource());
+                    if(network.degreeOf(e.getTarget()) == 1) remove_nodes.add(e.getTarget());
+                }
+            }
+            network.removeAllVertices(remove_nodes);
         }
 
         return network;
