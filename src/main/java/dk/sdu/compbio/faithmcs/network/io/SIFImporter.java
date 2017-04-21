@@ -1,8 +1,8 @@
 package dk.sdu.compbio.faithmcs.network.io;
 
 import dk.sdu.compbio.faithmcs.network.Edge;
-import dk.sdu.compbio.faithmcs.network.Network;
 import dk.sdu.compbio.faithmcs.network.Node;
+import org.jgrapht.Graph;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -12,7 +12,7 @@ import java.util.Scanner;
 
 class SIFImporter implements Importer {
     @Override
-    public void read(Network network, File file) throws FileNotFoundException {
+    public void read(Graph<Node,Edge> network, File file) throws FileNotFoundException {
         Map<String, Node> nodeMap = new HashMap<>();
 
         Scanner scan = new Scanner(file);
@@ -31,7 +31,7 @@ class SIFImporter implements Importer {
         scan.close();
     }
 
-    private static Node getNode(String label, Map<String, Node> nodeMap, Network network) {
+    private static Node getNode(String label, Map<String, Node> nodeMap, Graph<Node,Edge> network) {
         Node node = nodeMap.get(label);
         if(node == null) {
             node = new Node(label);

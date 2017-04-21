@@ -1,8 +1,8 @@
 package dk.sdu.compbio.faithmcs.network.io;
 
 import dk.sdu.compbio.faithmcs.network.Edge;
-import dk.sdu.compbio.faithmcs.network.Network;
 import dk.sdu.compbio.faithmcs.network.Node;
+import org.jgrapht.Graph;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -12,7 +12,7 @@ import java.util.Scanner;
 
 public class LEDAImporter implements Importer {
     @Override
-    public void read(Network network, File file) throws FileNotFoundException, ImportException {
+    public void read(Graph<Node,Edge> network, File file) throws FileNotFoundException, ImportException {
         Scanner scan = new Scanner(file);
 
         String line = readLine(scan);

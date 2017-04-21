@@ -1,8 +1,8 @@
 package dk.sdu.compbio.faithmcs;
 
-import dk.sdu.compbio.faithmcs.alg.Aligner;
 import dk.sdu.compbio.faithmcs.alg.IteratedLocalSearch;
-import dk.sdu.compbio.faithmcs.network.Network;
+import dk.sdu.compbio.faithmcs.alg.UndirectedIteratedLocalSearch;
+import dk.sdu.compbio.faithmcs.network.UndirectedNetwork;
 import dk.sdu.compbio.faithmcs.network.Node;
 import dk.sdu.compbio.faithmcs.network.io.ImportException;
 import dk.sdu.compbio.faithmcs.network.io.NetworkReader;
@@ -32,7 +32,6 @@ public class FaithMCS {
         options.addOption(null, "remove-exception-leaves", false, "Remove leaf connected by an exception edge from solution.");
         options.addOption("o", "output", true, "Output alignment table to file.");
         options.addOption("n", "network", true, "Output conserved subgraph to file.");
-        options.addOption(null, "consensus-matrix", true, "Write consensus matrix to file.");
 
         CommandLineParser parser = new DefaultParser();
         CommandLine cmd = parser.parse(options, args);
@@ -51,15 +50,15 @@ public class FaithMCS {
 
         int max_nonimproving = Integer.parseInt(cmd.getOptionValue("max-nonimproving", Integer.toString(DEFAULT_MAX_NONIMPROVING)));
 
-        List<Network> networks = new ArrayList<>();
+        List<UndirectedNetwork> networks = new ArrayList<>();
         for (String path : cmd.getArgList()) {
-            Network network = new Network();
+            UndirectedNetwork network = new UndirectedNetwork();
             NetworkReader.read(network, new File(path));
             networks.add(network);
         }
 
         float perturbation = Float.parseFloat(cmd.getOptionValue("perturbation", Float.toString(DEFAULT_PERTURBATION)));
-        Aligner aligner = new IteratedLocalSearch(networks, perturbation);
+        IteratedLocalSearch aligner = new UndirectedIteratedLocalSearch(networks, perturbation);
         aligner.run(max_nonimproving);
         Alignment alignment = aligner.getAlignment();
 
@@ -72,12 +71,6 @@ public class FaithMCS {
             boolean connected = cmd.hasOption("connected");
             boolean remove_exception_leaves = cmd.hasOption("remove-exception-leaves");
             NetworkWriter.write(alignment.buildNetwork(exceptions, connected, remove_exception_leaves), new File(cmd.getOptionValue("network")));
-        }
-
-        if (cmd.hasOption("consensus-matrix")) {
-            EdgeMatrix em = new EdgeMatrix(alignment.getNetworks());
-            ConsensusMatrix cm = new ConsensusMatrix(em, alignment.getNetworks().size());
-            cm.write(new File(cmd.getOptionValue("consensus-matrix")));
         }
     }
 

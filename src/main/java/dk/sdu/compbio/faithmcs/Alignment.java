@@ -1,7 +1,7 @@
 package dk.sdu.compbio.faithmcs;
 
 import dk.sdu.compbio.faithmcs.network.Edge;
-import dk.sdu.compbio.faithmcs.network.Network;
+import dk.sdu.compbio.faithmcs.network.UndirectedNetwork;
 import dk.sdu.compbio.faithmcs.network.Node;
 import org.jgrapht.alg.ConnectivityInspector;
 
@@ -11,9 +11,9 @@ import java.util.stream.IntStream;
 
 public class Alignment {
     private final List<List<Node>> alignment;
-    private final List<Network> networks;
+    private final List<UndirectedNetwork> networks;
 
-    public Alignment(List<List<Node>> alignment, List<Network> networks) {
+    public Alignment(List<List<Node>> alignment, List<UndirectedNetwork> networks) {
         this.alignment = alignment;
         this.networks = networks;
     }
@@ -22,13 +22,13 @@ public class Alignment {
         return alignment;
     }
 
-    public List<Network> getNetworks() { return networks; }
+    public List<UndirectedNetwork> getNetworks() { return networks; }
 
-    public Network buildNetwork(int exceptions, boolean connected, boolean remove_leaf_exceptions) {
+    public UndirectedNetwork buildNetwork(int exceptions, boolean connected, boolean remove_leaf_exceptions) {
         int M = alignment.get(0).size();
 
         int[][] edges = new int[M][M];
-        for(Network network : networks) {
+        for(UndirectedNetwork network : networks) {
             for(Edge e : network.edgeSet()) {
                 int i = e.getSource().getPosition();
                 int j = e.getTarget().getPosition();
@@ -37,7 +37,7 @@ public class Alignment {
             }
         }
 
-        Network network = new Network();
+        UndirectedNetwork network = new UndirectedNetwork();
         List<Node> nodes = new ArrayList<>();
         for(int i = 0; i < M; ++i) {
             int finalI = i;
@@ -60,7 +60,7 @@ public class Alignment {
                     int finalJ = j;
                     String label = IntStream.range(0, networks.size())
                             .mapToObj(g -> networks.get(g).getEdge(alignment.get(g).get(finalI), alignment.get(g).get(finalJ)))
-                            .filter(e -> e != null)
+                            .filter(Objects::nonNull)
                             .map(Edge::getLabel)
                             .collect(Collectors.joining(","));
                     network.addEdge(nodes.get(i), nodes.get(j), new Edge(nodes.get(i), nodes.get(j), label, edges[i][j]));

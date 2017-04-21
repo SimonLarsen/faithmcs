@@ -1,12 +1,14 @@
 package dk.sdu.compbio.faithmcs.network.io;
 
-import dk.sdu.compbio.faithmcs.network.Network;
+import dk.sdu.compbio.faithmcs.network.Edge;
+import dk.sdu.compbio.faithmcs.network.Node;
+import org.jgrapht.Graph;
 
 import java.io.File;
 import java.io.FileNotFoundException;
 
 public class NetworkWriter {
-    public static void write(Network network, File file) throws FileNotFoundException {
+    public static void write(Graph<Node,Edge> network, File file) throws FileNotFoundException {
         String path = file.getPath();
         int dotpos = path.lastIndexOf('.');
         if(dotpos == -1 || dotpos == path.length()) {
