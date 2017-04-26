@@ -1,7 +1,7 @@
 package dk.sdu.compbio.faithmcs;
 
+import dk.sdu.compbio.faithmcs.network.DirectedNetwork;
 import dk.sdu.compbio.faithmcs.network.Edge;
-import dk.sdu.compbio.faithmcs.network.UndirectedNetwork;
 
 import java.util.List;
 
@@ -15,11 +15,11 @@ public class DirectedEdgeMatrix implements EdgeMatrix {
         this.edges = new int[M][M];
     }
 
-    public DirectedEdgeMatrix(List<UndirectedNetwork> networks) {
+    public DirectedEdgeMatrix(List<DirectedNetwork> networks) {
         this.n = networks.size();
         this.M = networks.stream().mapToInt(v -> v.vertexSet().size()).max().getAsInt();
         this.edges = new int[M][M];
-        for(UndirectedNetwork network : networks) {
+        for(DirectedNetwork network : networks) {
             for(Edge e : network.edgeSet()) {
                 int i = e.getSource().getPosition();
                 int j = e.getTarget().getPosition();

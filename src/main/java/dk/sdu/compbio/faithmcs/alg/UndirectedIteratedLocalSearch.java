@@ -1,7 +1,7 @@
 package dk.sdu.compbio.faithmcs.alg;
 
 import com.google.common.collect.Sets;
-import dk.sdu.compbio.faithmcs.Alignment;
+import dk.sdu.compbio.faithmcs.UndirectedAlignment;
 import dk.sdu.compbio.faithmcs.UndirectedEdgeMatrix;
 import dk.sdu.compbio.faithmcs.network.Edge;
 import dk.sdu.compbio.faithmcs.network.UndirectedNetwork;
@@ -15,11 +15,11 @@ import java.util.stream.IntStream;
 public class UndirectedIteratedLocalSearch implements IteratedLocalSearch {
     private final int n, M;
     private final List<UndirectedNetwork> networks;
+    private float perturbation_amount;
 
     private final List<NeighborIndex<Node,Edge>> indices;
     private final List<List<Node>> nodes;
     private final UndirectedEdgeMatrix edges;
-    private float perturbation_amount;
     private final int[][] best_positions;
     private int quality, best_quality;
     private final Random rand;
@@ -83,8 +83,7 @@ public class UndirectedIteratedLocalSearch implements IteratedLocalSearch {
             for(int rep = 0; rep < count; ++rep) {
                 int j = rand.nextInt(M);
                 int k;
-                do k = rand.nextInt(M);
-                while(k == j);
+                do k = rand.nextInt(M); while(k == j);
                 swap(indices.get(i), nodes.get(i).get(j), nodes.get(i).get(k));
             }
         }
@@ -103,8 +102,12 @@ public class UndirectedIteratedLocalSearch implements IteratedLocalSearch {
                             .mapToObj(k -> delta(indices.get(finalI), nodes.get(finalI).get(finalJ), nodes.get(finalI).get(k)))
                             .collect(Collectors.toList());
 
-                    Integer best = IntStream.range(j+1, M).parallel().mapToObj(v -> v).max(Comparator.comparingDouble(k -> dts.get(k-(finalJ+1)))).get();
-                    int dt = delta(indices.get(i), nodes.get(i).get(j), nodes.get(i).get(best));
+                    Integer best = IntStream.range(j+1, M)
+                            .parallel()
+                            .mapToObj(v -> v)
+                            .max(Comparator.comparingInt(k -> dts.get(k-(finalJ+1)))).get();
+
+                    int dt = dts.get(best-(j+1));
 
                     if(dt > 0) {
                         repeat = true;
@@ -182,7 +185,7 @@ public class UndirectedIteratedLocalSearch implements IteratedLocalSearch {
     }
 
     @Override
-    public Alignment getAlignment() {
+    public UndirectedAlignment getAlignment() {
         // copy best solution back into nodes
         for(int i = 0; i < n; ++i) {
             for(int j = 0; j < M; ++j) {
@@ -195,7 +198,7 @@ public class UndirectedIteratedLocalSearch implements IteratedLocalSearch {
             node_list.sort(Comparator.comparingInt(Node::getPosition));
         }
 
-        return new Alignment(nodes, networks);
+        return new UndirectedAlignment(nodes, networks);
     }
 
     @Override

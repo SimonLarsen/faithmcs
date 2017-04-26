@@ -20,9 +20,6 @@ public class NetworkReader {
         switch(ending) {
             case "sif":
                 importer = new SIFImporter(); break;
-            case "gw":
-            case "leda":
-                importer = new LEDAImporter(); break;
         }
 
         if(importer == null) throw new IllegalArgumentException("Unrecognized file format: " + ending);

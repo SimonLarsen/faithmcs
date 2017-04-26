@@ -21,9 +21,6 @@ public class NetworkWriter {
         switch(ending) {
             case "sif":
                 exporter = new SIFExporter(); break;
-            case "gw":
-            case "leda":
-                exporter = new LEDAExporter(); break;
         }
 
         if(exporter == null) throw new IllegalArgumentException("Unrecognized file format: " + ending);

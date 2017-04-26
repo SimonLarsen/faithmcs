@@ -15,10 +15,19 @@ class SIFImporter implements Importer {
     public void read(Graph<Node,Edge> network, File file) throws FileNotFoundException {
         Map<String, Node> nodeMap = new HashMap<>();
 
+        boolean first_line = true;
+        String delimiter = "[ \t]";
+
         Scanner scan = new Scanner(file);
         while(scan.hasNextLine()) {
             String line = scan.nextLine().trim();
-            String[] parts = line.split("[ \t]");
+
+            if(first_line) {
+                first_line = false;
+                if(line.contains("\t")) delimiter = " ";
+            }
+
+            String[] parts = line.split(delimiter);
             if(parts.length == 0) continue;
             Node source = getNode(parts[0], nodeMap, network);
             if(parts.length >= 3) {

@@ -1,13 +1,16 @@
 package dk.sdu.compbio.faithmcs;
 
+import dk.sdu.compbio.faithmcs.alg.DirectedIteratedLocalSearch;
 import dk.sdu.compbio.faithmcs.alg.IteratedLocalSearch;
 import dk.sdu.compbio.faithmcs.alg.UndirectedIteratedLocalSearch;
+import dk.sdu.compbio.faithmcs.network.DirectedNetwork;
 import dk.sdu.compbio.faithmcs.network.UndirectedNetwork;
 import dk.sdu.compbio.faithmcs.network.Node;
 import dk.sdu.compbio.faithmcs.network.io.ImportException;
 import dk.sdu.compbio.faithmcs.network.io.NetworkReader;
 import dk.sdu.compbio.faithmcs.network.io.NetworkWriter;
 import org.apache.commons.cli.*;
+import org.jgrapht.alg.DirectedNeighborIndex;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -25,10 +28,10 @@ public class FaithMCS {
     public static void main(String[] args) throws ParseException, FileNotFoundException, ImportException {
         Options options = new Options();
         options.addOption("h", "help", false, "Show this help text");
+        options.addOption("d", "directed", false, "Treat networks as directed.");
         options.addOption("i", "max-nonimproving", true, String.format("Stop algorithm after this number of non-improving iterations. Default: %d.", DEFAULT_MAX_NONIMPROVING));
         options.addOption("p", "perturbation", true, String.format("Ratio of node to swap during perturbation. Default: %f.", DEFAULT_PERTURBATION));
         options.addOption("e", "exceptions", true, String.format("Number of exceptions allowed per edge in solution. Default: %d.", DEFAULT_EXCEPTIONS));
-        options.addOption("c", "connected", false, "Only extract largest connected subnetwork in solution.");
         options.addOption(null, "remove-exception-leaves", false, "Remove leaf connected by an exception edge from solution.");
         options.addOption("o", "output", true, "Output alignment table to file.");
         options.addOption("n", "network", true, "Output conserved subgraph to file.");
@@ -49,16 +52,35 @@ public class FaithMCS {
         }
 
         int max_nonimproving = Integer.parseInt(cmd.getOptionValue("max-nonimproving", Integer.toString(DEFAULT_MAX_NONIMPROVING)));
+        float perturbation = Float.parseFloat(cmd.getOptionValue("perturbation", Float.toString(DEFAULT_PERTURBATION)));
 
-        List<UndirectedNetwork> networks = new ArrayList<>();
-        for (String path : cmd.getArgList()) {
-            UndirectedNetwork network = new UndirectedNetwork();
-            NetworkReader.read(network, new File(path));
-            networks.add(network);
+        IteratedLocalSearch aligner;
+
+        boolean directed = cmd.hasOption("directed");
+        if(directed) {
+            System.err.println("Treating networks as undirected");
+            List<DirectedNetwork> networks = new ArrayList<>();
+            for(String path : cmd.getArgList()) {
+                DirectedNetwork network = new DirectedNetwork();
+                NetworkReader.read(network, new File(path));
+                networks.add(network);
+            }
+
+            aligner = new DirectedIteratedLocalSearch(networks, perturbation);
+        }
+        // undirected
+        else {
+            System.err.println("Treating networks as directed");
+            List<UndirectedNetwork> networks = new ArrayList<>();
+            for(String path : cmd.getArgList()) {
+                UndirectedNetwork network = new UndirectedNetwork();
+                NetworkReader.read(network, new File(path));
+                networks.add(network);
+            }
+
+            aligner = new UndirectedIteratedLocalSearch(networks, perturbation);
         }
 
-        float perturbation = Float.parseFloat(cmd.getOptionValue("perturbation", Float.toString(DEFAULT_PERTURBATION)));
-        IteratedLocalSearch aligner = new UndirectedIteratedLocalSearch(networks, perturbation);
         aligner.run(max_nonimproving);
         Alignment alignment = aligner.getAlignment();
 
@@ -68,9 +90,8 @@ public class FaithMCS {
 
         if (cmd.hasOption("network")) {
             int exceptions = Integer.parseInt(cmd.getOptionValue("exceptions", Integer.toString(DEFAULT_EXCEPTIONS)));
-            boolean connected = cmd.hasOption("connected");
             boolean remove_exception_leaves = cmd.hasOption("remove-exception-leaves");
-            NetworkWriter.write(alignment.buildNetwork(exceptions, connected, remove_exception_leaves), new File(cmd.getOptionValue("network")));
+            NetworkWriter.write(alignment.buildNetwork(exceptions, remove_exception_leaves), new File(cmd.getOptionValue("network")));
         }
     }
 
