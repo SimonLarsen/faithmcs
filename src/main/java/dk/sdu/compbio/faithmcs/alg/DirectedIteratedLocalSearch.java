@@ -87,7 +87,7 @@ public class DirectedIteratedLocalSearch implements IteratedLocalSearch {
                 int j = rand.nextInt(M);
                 int k;
                 do k = rand.nextInt(M); while(k == j);
-                swap(indices.get(i), nodes.get(i).get(j), nodes.get(i).get(k));
+                swap(networks.get(i), indices.get(i), nodes.get(i).get(j), nodes.get(i).get(k));
             }
         }
 
@@ -102,7 +102,7 @@ public class DirectedIteratedLocalSearch implements IteratedLocalSearch {
 
                     List<Integer> dts = IntStream.range(j+1, M)
                             .parallel()
-                            .mapToObj(k -> delta(indices.get(finalI), nodes.get(finalI).get(finalJ), nodes.get(finalI).get(k)))
+                            .mapToObj(k -> delta(networks.get(finalI), indices.get(finalI), nodes.get(finalI).get(finalJ), nodes.get(finalI).get(k)))
                             .collect(Collectors.toList());
 
                     Integer best = IntStream.range(j+1, M)
@@ -114,7 +114,7 @@ public class DirectedIteratedLocalSearch implements IteratedLocalSearch {
 
                     if(dt > 0) {
                         repeat = true;
-                        swap(indices.get(i), nodes.get(i).get(j), nodes.get(i).get(best));
+                        swap(networks.get(i), indices.get(i), nodes.get(i).get(j), nodes.get(i).get(best));
                     }
                 }
             }
@@ -138,7 +138,7 @@ public class DirectedIteratedLocalSearch implements IteratedLocalSearch {
         }
     }
 
-    private int delta(DirectedNeighborIndex<Node,Edge> index, Node u, Node v) {
+    private int delta(DirectedNetwork network, DirectedNeighborIndex<Node,Edge> index, Node u, Node v) {
         int delta = 0;
 
         int i = u.getPosition();
@@ -176,10 +176,22 @@ public class DirectedIteratedLocalSearch implements IteratedLocalSearch {
             }
         }
 
+        boolean has_uv = network.containsEdge(u, v);
+        boolean has_vu = network.containsEdge(v, u);
+
+        if(has_uv && !has_vu) {
+            delta -= 2 * edges.get(i, j) - 1;
+            delta += 2 * edges.get(j, i) + 1;
+        }
+        if(!has_uv && has_vu) {
+            delta -= 2 * edges.get(j, i) - 1;
+            delta += 2 * edges.get(i, j) + 1;
+        }
+
         return delta;
     }
 
-    private void swap(DirectedNeighborIndex<Node,Edge> index, Node u, Node v) {
+    private void swap(DirectedNetwork network, DirectedNeighborIndex<Node,Edge> index, Node u, Node v) {
         int i = u.getPosition();
         int j = v.getPosition();
 
@@ -213,6 +225,18 @@ public class DirectedIteratedLocalSearch implements IteratedLocalSearch {
                 edges.decrement(l, j);
                 edges.increment(l, i);
             }
+        }
+
+        boolean has_uv = network.containsEdge(u, v);
+        boolean has_vu = network.containsEdge(v, u);
+
+        if(has_uv && !has_vu) {
+            edges.decrement(i, j);
+            edges.increment(j, i);
+        }
+        else if(!has_uv && has_vu) {
+            edges.decrement(j, i);
+            edges.increment(i, j);
         }
 
         u.setPosition(j);
