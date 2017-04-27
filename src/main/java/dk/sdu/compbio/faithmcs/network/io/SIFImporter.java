@@ -24,7 +24,7 @@ class SIFImporter implements Importer {
 
             if(first_line) {
                 first_line = false;
-                if(line.contains("\t")) delimiter = " ";
+                if(line.contains("\t")) delimiter = "\t";
             }
 
             String[] parts = line.split(delimiter);
