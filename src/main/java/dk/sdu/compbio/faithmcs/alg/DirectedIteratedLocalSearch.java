@@ -262,12 +262,12 @@ public class DirectedIteratedLocalSearch implements IteratedLocalSearch {
 
     @Override
     public int getCurrentNumberOfEdges() {
-        return 0;
+        return quality;
     }
 
     @Override
     public int getBestNumberOfEdges() {
-        return 0;
+        return best_quality;
     }
 
     @Override
