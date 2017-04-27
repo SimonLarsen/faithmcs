@@ -10,7 +10,6 @@ import dk.sdu.compbio.faithmcs.network.io.ImportException;
 import dk.sdu.compbio.faithmcs.network.io.NetworkReader;
 import dk.sdu.compbio.faithmcs.network.io.NetworkWriter;
 import org.apache.commons.cli.*;
-import org.jgrapht.alg.DirectedNeighborIndex;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -103,8 +102,7 @@ public class FaithMCS {
 
         for (int j = 0; j < M; ++j) {
             int finalJ = j;
-            pw.println(IntStream.range(0, n)
-                    .mapToObj(i -> align.get(i).get(finalJ))
+            pw.println(align.stream().map(nodes -> nodes.get(finalJ))
                     .filter(node -> !node.isFake())
                     .map(Node::toString)
                     .collect(Collectors.joining("\t"))

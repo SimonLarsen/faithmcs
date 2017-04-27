@@ -47,7 +47,7 @@ public class DirectedIteratedLocalSearch implements IteratedLocalSearch {
         }
 
         nodes = networks.stream()
-                .map(network -> network.vertexSet().stream().collect(Collectors.toList()))
+                .map(network -> new ArrayList<>(network.vertexSet()))
                 .collect(Collectors.toList());
 
         for(int i = 0; i < n; ++i) {
@@ -107,7 +107,7 @@ public class DirectedIteratedLocalSearch implements IteratedLocalSearch {
 
                     Integer best = IntStream.range(j+1, M)
                             .parallel()
-                            .mapToObj(v -> v)
+                            .boxed()
                             .max(Comparator.comparingInt(k -> dts.get(k-(finalJ+1)))).get();
 
                     int dt = dts.get(best-(j+1));

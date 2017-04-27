@@ -8,5 +8,5 @@ import java.io.File;
 import java.io.FileNotFoundException;
 
 interface Importer {
-    void read(Graph<Node,Edge> network, File file) throws FileNotFoundException, ImportException;
+    void read(Graph<Node,Edge> network, File file) throws FileNotFoundException;
 }
