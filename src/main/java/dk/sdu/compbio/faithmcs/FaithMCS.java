@@ -57,7 +57,7 @@ public class FaithMCS {
 
         boolean directed = cmd.hasOption("directed");
         if(directed) {
-            System.err.println("Treating networks as undirected");
+            System.err.println("Treating networks as directed");
             List<DirectedNetwork> networks = new ArrayList<>();
             for(String path : cmd.getArgList()) {
                 DirectedNetwork network = new DirectedNetwork();
@@ -69,7 +69,7 @@ public class FaithMCS {
         }
         // undirected
         else {
-            System.err.println("Treating networks as directed");
+            System.err.println("Treating networks as undirected");
             List<UndirectedNetwork> networks = new ArrayList<>();
             for(String path : cmd.getArgList()) {
                 UndirectedNetwork network = new UndirectedNetwork();
