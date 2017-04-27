@@ -63,6 +63,7 @@ public class FaithMCS {
                 DirectedNetwork network = new DirectedNetwork();
                 NetworkReader.read(network, new File(path));
                 networks.add(network);
+                System.err.println(String.format("Read network file: %s. Nodes: %d. Edges: %d.", path, network.vertexSet().size(), network.edgeSet().size()));
             }
 
             aligner = new DirectedIteratedLocalSearch(networks, perturbation);
@@ -75,6 +76,7 @@ public class FaithMCS {
                 UndirectedNetwork network = new UndirectedNetwork();
                 NetworkReader.read(network, new File(path));
                 networks.add(network);
+                System.err.println(String.format("Read network file: %s. Nodes: %d. Edges: %d.", path, network.vertexSet().size(), network.edgeSet().size()));
             }
 
             aligner = new UndirectedIteratedLocalSearch(networks, perturbation);
